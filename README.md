@@ -38,7 +38,7 @@ Kurt Ballou), guide de montage GCI Brutalist Jr (clone de la SDT-1), photo du ci
 
 ## Interface
 
-- Fenêtre ouverte à **493 px de haut** (391 × 493), impossible de la réduire en dessous, proportions bloquées, jusqu'à 150 % (mêmes réglages qu'Echoflex). Clic droit > *Window size* : défaut / 75 % / 100 %.
+- Fenêtre ouverte à **493 px de haut** (391 × 493), impossible de la réduire en dessous, proportions bloquées, jusqu'à 150 % (mêmes réglages qu'Echoflex). Clic droit > *Plugin size* : 60 % / 75 % / 100 % pour cette fenêtre, et *Default size (new windows)* pour choisir la taille d'ouverture de toutes les nouvelles fenêtres de Doorn (réglage enregistré dans `Studio Wiga/Doorn/settings.xml` du dossier de données de l'utilisateur, comme Octopus).
 - **Barre de presets** sous la ligne d'état : flèches = preset précédent / suivant, clic sur le nom = menu (presets d'usine, presets utilisateur 1 à 9).
 - **Ligne d'état** : uniquement le réglage de la commande que l'on bouge (potards en %, inverseurs, footswitchs), en police Poppins, grande et lisible (v2.10 : texte et cadre agrandis, fond plus sombre, barre de presets agrandie aussi) ; apparaît quand un réglage bouge, puis s'efface.
 - **Anti-gel v2** : moteur de rendu logiciel forcé sous Windows (réappliqué à chaque nouvelle fenêtre hôte), fenêtre opaque, timer 30 Hz qui ne redessine que ce qui a changé (aucun redessin au repos), aucun calcul lourd dans le dessin (caches d'images reconstruits par le timer seulement, après stabilisation de la taille ou changement d'échelle), chien de garde qui relance le rendu si un redessin n'arrive pas en 1,5 s, jamais de redimensionnement forcé par la fenêtre ; côté audio, aucun appel à l'hôte ni allocation depuis le thread audio (les changements MIDI passent par une file vidée sur le thread de messages, paramètres lus par pointeurs mis en cache). JUCE 8.0.15.
@@ -102,3 +102,4 @@ YouTube normalise le volume (les niveaux relatifs ne sont pas mesurables). Donn�
 - Polices : Poppins (ligne d'état), Fondamento et Alegreya SC (inscriptions du fond) (SIL Open Font License, `assets/OFL_*.txt`).
 
 - v2.12.1 : menu de taille de fenêtre : « 60 % (default) », 75 %, 100 % (plus de taille en pixels)
+- v2.13.0 : clic droit > *Plugin size* > *Default size (new windows)* : taille par défaut des nouvelles fenêtres au choix (60 / 75 / 100 %), comme dans Octopus
