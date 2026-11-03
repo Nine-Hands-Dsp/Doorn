@@ -1,5 +1,6 @@
 # DOORN (Studio Wiga) - notice PDF bilingue (anglais puis francais), illustree avec le rendu reel du plugin.
 # Usage : python3 tools/manual.py <dossier des captures (tools/render)> <fichier PDF de sortie>
+#   ou   : python3 tools/manual.py tools/manual_assets <fichier PDF> (images deja composees, reprises de la notice precedente)
 # Si le dossier ne contient pas les captures brutes (doorn_status.png...) mais les images deja composees
 # (doorn_annotated.png, doorn_modes.png, doorn_leds.png, doorn_bar.png, doorn_cover_cutout.png), elles sont reprises telles quelles.
 import os, sys
@@ -18,7 +19,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SHOTS = sys.argv[1]
 OUT = sys.argv[2]
-VERSION = "2.12.1"
+VERSION = "2.13.1"
 TMP = os.path.dirname(os.path.abspath(OUT))
 FONTS = os.path.join(ROOT, "assets", "fonts")
 
@@ -220,25 +221,25 @@ T = {
      "<b>Noise gate</b> (right-click &gt; Noise gate): silences hiss and hum as soon as you stop playing, opens instantly on the next note (no attack is ever cut) and lets notes fade smoothly. Off, Light, <b>Medium</b> (default) or Strong (noisy pickups). Acts on the effect only."],
  led_cap="LED in bypass and with the effect on; BOOST knob with the boost off and on (lit, cursor visible).",
  midi_t="6. MIDI",
- midi_intro=["Every control of the front panel can be driven from a MIDI controller (footswitches, expression pedals, knobs), for example an M-Vave Chocolate Plus. Doorn listens on all MIDI channels. The default numbers are those of the earlier versions (CC 20 to 29), so existing pedalboards keep working; any of them can be changed with <b>MIDI Learn</b>."],
- midi_hdr=["Control", "Default CC", "Type"],
- midi=[["Gain", "CC 20", "Continuous (0-127 = full travel)"], ["Boost (level knob)", "CC 21", "Continuous"], ["Level", "CC 22", "Continuous"],
-       ["Treble", "CC 23", "Continuous"], ["Mids", "CC 24", "Continuous"], ["Bass", "CC 25", "Continuous"],
-       ["EQ", "CC 26", "Switch: 64 or more = on, below 64 = off"],
-       ["Mode", "CC 27", "3-position selector: 0-42 SDT-2, 43-84 Laerm, 85-127 SDT-1"],
-       ["Boost footswitch", "CC 28", "Footswitch, latching (127 = on / 0 = off) or momentary (toggle on each press)"],
-       ["Bypass", "CC 29", "Footswitch, latching or momentary (same setting)"]],
+ midi_intro=["Every control of the front panel can be driven from a MIDI controller (footswitches, expression pedals, knobs), for example an M-Vave Chocolate Plus. Doorn listens on all MIDI channels. No CC is assigned by default: each control you want to drive is assigned with <b>MIDI Learn</b> (right-click the control, or right-click &gt; MIDI &gt; Learn: ...)."],
+ midi_hdr=["Control", "Type"],
+ midi=[["Gain", "Continuous (0-127 = full travel)"], ["Boost (level knob)", "Continuous"], ["Level", "Continuous"],
+       ["Treble", "Continuous"], ["Mids", "Continuous"], ["Bass", "Continuous"],
+       ["EQ", "Switch: 64 or more = on, below 64 = off"],
+       ["Mode", "3-position selector: 0-42 SDT-2, 43-84 Laerm, 85-127 SDT-1"],
+       ["Boost footswitch", "Footswitch, latching (127 = on / 0 = off) or momentary (toggle on each press)"],
+       ["Bypass", "Footswitch, latching or momentary (same setting)"]],
  learn_h="MIDI Learn",
  learn=["<b>Right-click a control</b> (knob, switch or footswitch): the menu starts with <b>MIDI Learn: &lt;name&gt; (CC n)</b>, which also shows the current number (or a dash when the control is not assigned). Choose it, then move the expression pedal or press the MIDI button you want to use. While Doorn waits, the status line reads <b>MIDI LEARN: move a control for Gain</b>; the first CC received is assigned to the control (it does not change the sound) and the status line confirms it for 2 seconds, e.g. <b>Gain = CC 64</b>.",
         "If that CC number was already used by another control, the other control is unassigned, so one CC never drives two controls by accident. <b>Clear MIDI: &lt;name&gt;</b> removes the assignment of the control; <b>Cancel MIDI learn</b> (shown while Doorn is waiting) stops the learn without changing anything.",
-        "<b>Right-click anywhere else &gt; MIDI</b>: the list of all ten controls with their current CC (<b>Learn: Gain (CC 20)</b>, ...; choose one to learn it), <b>Cancel MIDI learn</b> and <b>Reset MIDI to defaults (CC 20-29)</b>.",
-        "The assignments are <b>saved with your project</b> (and with the DAW preset). A project made with an earlier version opens with the default numbers. CC 0 to 119 can be learnt (120 to 127 are channel mode messages)."],
+        "<b>Right-click anywhere else &gt; MIDI</b>: the list of all ten controls with their current CC (<b>Learn: Gain (—)</b> while it is not assigned, <b>Learn: Gain (CC 64)</b> once learnt; choose one to learn it), <b>Cancel MIDI learn</b> and <b>Clear all MIDI assignments</b>, which removes every assignment.",
+        "The assignments are <b>saved with your project</b> (and with the DAW preset). A project made with an earlier version that still used the former factory numbers (CC 20 to 29) opens with no assignment: learn the controls you need again. A project in which you had changed an assignment keeps its assignments as saved. CC 0 to 119 can be learnt (120 to 127 are channel mode messages)."],
  midi_more_h="Expression pedals, footswitches and program changes",
- midi_more=["<b>Expression pedals</b>: movements are never stepped. Doorn measures the time between two messages from your pedal and ramps to each new value over that time; the real travel of your pedal is learnt automatically, so a pedal that only sends 2 to 116 still reaches exactly 0 and 100 %. For a knob assigned to CC 0 to 31, CC n+32 is read as its fine (14-bit) part if your pedal sends it (CC 52 to 57 with the defaults).",
+ midi_more=["<b>Expression pedals</b>: movements are never stepped. Doorn measures the time between two messages from your pedal and ramps to each new value over that time; the real travel of your pedal is learnt automatically, so a pedal that only sends 2 to 116 still reaches exactly 0 and 100 %. For a knob learnt on CC 0 to 31, CC n+32 is read as its fine (14-bit) part if your pedal sends it.",
             "<b>MIDI footswitches</b>: latching (127 = on / 0 = off, default) or momentary (toggle on each press), right-click &gt; Settings. This applies to both footswitches, whatever CC they are learnt on.",
             "<b>Program Change 1 to 13</b> recall the factory presets. All parameters can also be automated in the DAW."],
  win_t="7. Window",
- win=["Doorn uses the single pedal format of Echoflex: the window opens at its default size and can never be made smaller than that. Right-click &gt; <b>Window size</b>: <b>60 % (default)</b>, <b>75 %</b> or <b>100 %</b>; you can also drag the bottom-right corner to enlarge it up to 150 % (proportions are kept).",
+ win=["Doorn uses the single pedal format of Echoflex: the window opens at its default size and can never be made smaller than that. Right-click &gt; <b>Plugin size</b>: <b>60 %</b>, <b>75 %</b> or <b>100 %</b> resizes this window, and <b>(default)</b> is shown next to the default size you chose. At the bottom of the same menu, <b>Default size (new windows)</b> chooses the size at which every new Doorn window opens (a setting shared by all instances and saved on the computer); the open window takes that size at once. The window can never be made smaller than 60 %; you can also drag the bottom-right corner to enlarge it up to 150 % (proportions are kept).",
       "The <b>status line</b> shows only the setting of the knob, switch or footswitch you just moved (knobs in %, e.g. <i>gain 76 %</i>, <i>eq off</i>, <i>laerm</i>, <i>boost on</i>), in large, clear lettering; it appears when a setting moves and fades out after 2.5 s. It also shows the MIDI Learn messages. The <b>preset bar</b> under it always shows the current preset, mode and boost / bypass state."],
  bar_cap="Status line (the control you just moved) and preset bar.",
  pre_t="8. Presets",
@@ -254,8 +255,8 @@ T = {
        ["Latency", "32 samples (oversampling filter), reported to the DAW"], ["Gain", "about 26 to 72 dB, + 0 to 20 dB boost"],
        ["EQ", "bass 90 Hz + 120 Hz punch -15 / +18 dB, mids 750 Hz ±5 dB, treble 4 kHz -5 / +16 dB, bypassable"],
        ["Processing", "4x oversampling, smoothed parameters, no denormals"], ["CPU", "about 4 % of one core at 48 kHz (stereo)"],
-       ["MIDI", "all channels; MIDI Learn on the 10 controls (defaults CC 20-29), 14-bit CC, Program Change 1-13; assignments saved with the project"],
-       ["Window", "60 % (default) / 75 % / 100 %, up to 150 %, never smaller than the default size; anti-freeze v2 under Windows (software rendering, watchdog, no host call from the audio thread)"]],),
+       ["MIDI", "all channels; MIDI Learn on the 10 controls (no CC assigned by default), 14-bit CC, Program Change 1-13; assignments saved with the project"],
+       ["Window", "60 % / 75 % / 100 % (Plugin size), default size of new windows to choose, up to 150 %, never smaller than 60 %; anti-freeze v2 under Windows (software rendering, watchdog, no host call from the audio thread)"]],),
 "fr": dict(
  lang="FRANÇAIS", sub="Distorsion high gain &nbsp;·&nbsp; VST3 pour Windows et macOS", ver="Notice d'utilisation &nbsp;·&nbsp; version " + VERSION,
  intro_t="1. Présentation",
@@ -298,25 +299,25 @@ T = {
      "<b>Noise gate</b> (clic droit &gt; Noise gate) : coupe le souffle et le ronflement dès qu'on arrête de jouer, s'ouvre instantanément à la note suivante (aucune attaque coupée), laisse les notes s'éteindre en douceur. Off, Light, <b>Medium</b> (par défaut) ou Strong (micros bruyants). N'agit que sur l'effet."],
  led_cap="LED en bypass et effet actif ; potard BOOST boost coupé et enclenché (éclairé, curseur visible).",
  midi_t="6. MIDI",
- midi_intro=["Toutes les commandes de la façade se pilotent depuis un contrôleur MIDI (footswitchs, pédales d'expression, potards), par exemple un M-Vave Chocolate Plus. Doorn écoute tous les canaux MIDI. Les numéros par défaut sont ceux des versions précédentes (CC 20 à 29) : les pédaliers déjà réglés continuent de fonctionner, et chacun peut être changé avec le <b>MIDI Learn</b>."],
- midi_hdr=["Commande", "CC par défaut", "Type"],
- midi=[["Gain", "CC 20", "Continu (0-127 = toute la course)"], ["Boost (potard de niveau)", "CC 21", "Continu"], ["Level", "CC 22", "Continu"],
-       ["Treble", "CC 23", "Continu"], ["Mids", "CC 24", "Continu"], ["Bass", "CC 25", "Continu"],
-       ["EQ", "CC 26", "Bascule : 64 ou plus = on, moins de 64 = off"],
-       ["Mode", "CC 27", "Sélecteur 3 positions : 0-42 SDT-2, 43-84 Laerm, 85-127 SDT-1"],
-       ["Footswitch Boost", "CC 28", "Footswitch, à accrochage (127 = on / 0 = off) ou momentané (bascule à chaque appui)"],
-       ["Bypass", "CC 29", "Footswitch, à accrochage ou momentané (même réglage)"]],
+ midi_intro=["Toutes les commandes de la façade se pilotent depuis un contrôleur MIDI (footswitchs, pédales d'expression, potards), par exemple un M-Vave Chocolate Plus. Doorn écoute tous les canaux MIDI. Aucun CC n'est assigné par défaut : chaque commande à piloter s'assigne avec le <b>MIDI Learn</b> (clic droit sur la commande, ou clic droit &gt; MIDI &gt; Learn: ...)."],
+ midi_hdr=["Commande", "Type"],
+ midi=[["Gain", "Continu (0-127 = toute la course)"], ["Boost (potard de niveau)", "Continu"], ["Level", "Continu"],
+       ["Treble", "Continu"], ["Mids", "Continu"], ["Bass", "Continu"],
+       ["EQ", "Bascule : 64 ou plus = on, moins de 64 = off"],
+       ["Mode", "Sélecteur 3 positions : 0-42 SDT-2, 43-84 Laerm, 85-127 SDT-1"],
+       ["Footswitch Boost", "Footswitch, à accrochage (127 = on / 0 = off) ou momentané (bascule à chaque appui)"],
+       ["Bypass", "Footswitch, à accrochage ou momentané (même réglage)"]],
  learn_h="MIDI Learn",
  learn=["<b>Clic droit sur une commande</b> (potard, inverseur ou footswitch) : le menu commence par <b>MIDI Learn: &lt;nom&gt; (CC n)</b>, qui indique aussi le numéro actuel (ou un tiret si la commande n'est pas assignée). Choisissez-le, puis bougez la pédale d'expression ou appuyez sur le bouton MIDI à utiliser. Pendant l'attente, la ligne d'état affiche <b>MIDI LEARN: move a control for Gain</b> ; le premier CC reçu est affecté à la commande (il ne change pas le son) et la ligne d'état le confirme pendant 2 secondes, par ex. <b>Gain = CC 64</b>.",
         "Si ce numéro de CC servait déjà à une autre commande, celle-ci est désassignée : un même CC ne pilote jamais deux commandes par erreur. <b>Clear MIDI: &lt;nom&gt;</b> retire l'assignation de la commande ; <b>Cancel MIDI learn</b> (affiché pendant l'attente) annule l'apprentissage sans rien changer.",
-        "<b>Clic droit ailleurs &gt; MIDI</b> : la liste des dix commandes avec leur CC actuel (<b>Learn: Gain (CC 20)</b>, ... ; en choisir une lance son apprentissage), <b>Cancel MIDI learn</b> et <b>Reset MIDI to defaults (CC 20-29)</b>.",
-        "Les assignations sont <b>sauvegardées avec le projet</b> (et avec le preset du DAW). Un projet fait avec une version précédente s'ouvre avec les numéros par défaut. Les CC 0 à 119 peuvent être appris (120 à 127 sont des messages de mode de canal)."],
+        "<b>Clic droit ailleurs &gt; MIDI</b> : la liste des dix commandes avec leur CC actuel (<b>Learn: Gain (—)</b> tant qu'elle n'est pas assignée, <b>Learn: Gain (CC 64)</b> une fois apprise ; en choisir une lance son apprentissage), <b>Cancel MIDI learn</b> et <b>Clear all MIDI assignments</b>, qui efface toutes les assignations.",
+        "Les assignations sont <b>sauvegardées avec le projet</b> (et avec le preset du DAW). Un projet fait avec une version précédente qui utilisait encore les anciens numéros d'usine (CC 20 à 29) s'ouvre sans aucune assignation : réapprenez les commandes voulues. Un projet où vous aviez changé une assignation garde ses assignations telles qu'enregistrées. Les CC 0 à 119 peuvent être appris (120 à 127 sont des messages de mode de canal)."],
  midi_more_h="Pédales d'expression, footswitchs et Program Change",
- midi_more=["<b>Pédales d'expression</b> : les mouvements ne sont jamais saccadés. Doorn mesure le temps entre deux messages de votre pédale et rejoint chaque nouvelle valeur par une rampe pendant ce temps ; la course réelle de votre pédale est apprise automatiquement : une pédale qui n'envoie que 2 à 116 atteint quand même exactement 0 et 100 %. Pour un potard assigné à un CC de 0 à 31, le CC n+32 est lu comme sa partie fine (14 bits) si la pédale l'envoie (CC 52 à 57 avec les numéros par défaut).",
+ midi_more=["<b>Pédales d'expression</b> : les mouvements ne sont jamais saccadés. Doorn mesure le temps entre deux messages de votre pédale et rejoint chaque nouvelle valeur par une rampe pendant ce temps ; la course réelle de votre pédale est apprise automatiquement : une pédale qui n'envoie que 2 à 116 atteint quand même exactement 0 et 100 %. Pour un potard appris sur un CC de 0 à 31, le CC n+32 est lu comme sa partie fine (14 bits) si la pédale l'envoie.",
             "<b>Footswitchs MIDI</b> : à accrochage (127 = on / 0 = off, par défaut) ou momentanés (bascule à chaque appui), clic droit &gt; Settings. Le réglage vaut pour les deux footswitchs, quel que soit le CC appris.",
             "<b>Program Change 1 à 13</b> : rappel des presets usine. Tous les paramètres sont aussi automatisables dans le DAW."],
  win_t="7. Fenêtre",
- win=["Doorn utilise le format pédale simple d'Echoflex : la fenêtre s'ouvre à sa taille par défaut et ne peut jamais être réduite en dessous. Clic droit &gt; <b>Window size</b> : <b>60 % (default)</b>, <b>75 %</b> ou <b>100 %</b> ; vous pouvez aussi tirer le coin en bas à droite pour l'agrandir jusqu'à 150 % (les proportions sont conservées).",
+ win=["Doorn utilise le format pédale simple d'Echoflex : la fenêtre s'ouvre à sa taille par défaut et ne peut jamais être réduite en dessous. Clic droit &gt; <b>Plugin size</b> : <b>60 %</b>, <b>75 %</b> ou <b>100 %</b> redimensionne cette fenêtre, et <b>(default)</b> est indiqué à côté de la taille par défaut choisie. En bas du même menu, <b>Default size (new windows)</b> choisit la taille d'ouverture de toutes les nouvelles fenêtres de Doorn (réglage commun à toutes les instances, enregistré sur l'ordinateur) ; la fenêtre ouverte prend aussitôt cette taille. La fenêtre ne peut jamais être réduite sous 60 % ; vous pouvez aussi tirer le coin en bas à droite pour l'agrandir jusqu'à 150 % (les proportions sont conservées).",
       "La <b>ligne d'état</b> affiche seulement le réglage du potard, de l'inverseur ou du footswitch que vous venez de bouger (potards en %, par ex. <i>gain 76 %</i>, <i>eq off</i>, <i>laerm</i>, <i>boost on</i>), en grands caractères bien lisibles ; elle apparaît quand un réglage bouge et s'efface au bout de 2,5 s. Elle affiche aussi les messages du MIDI Learn. La <b>barre de presets</b> en dessous affiche en permanence le preset, le mode et l'état boost / bypass."],
  bar_cap="Ligne d'état (la commande que vous venez de bouger) et barre de presets.",
  pre_t="8. Presets",
@@ -332,8 +333,8 @@ T = {
        ["Latence", "32 échantillons (filtre de sur-échantillonnage), annoncée au DAW"], ["Gain", "environ 26 à 72 dB, + 0 à 20 dB de boost"],
        ["EQ", "graves 90 Hz + punch 120 Hz -15 / +18 dB, médiums 750 Hz ±5 dB, aigus 4 kHz -5 / +16 dB, bypassable"],
        ["Traitement", "sur-échantillonnage x4, paramètres lissés, pas de dénormaux"], ["Processeur", "environ 4 % d'un cœur à 48 kHz (stéréo)"],
-       ["MIDI", "tous les canaux ; MIDI Learn sur les 10 commandes (CC 20-29 par défaut), CC 14 bits, Program Change 1-13 ; assignations sauvegardées avec le projet"],
-       ["Fenêtre", "60 % (default) / 75 % / 100 %, jusqu'à 150 %, jamais plus petite que la taille par défaut ; anti-gel v2 sous Windows (rendu logiciel, chien de garde, aucun appel à l'hôte depuis le thread audio)"]],),
+       ["MIDI", "tous les canaux ; MIDI Learn sur les 10 commandes (aucun CC assigné par défaut), CC 14 bits, Program Change 1-13 ; assignations sauvegardées avec le projet"],
+       ["Fenêtre", "60 % / 75 % / 100 % (Plugin size), taille par défaut des nouvelles fenêtres au choix, jusqu'à 150 %, jamais sous 60 % ; anti-gel v2 sous Windows (rendu logiciel, chien de garde, aucun appel à l'hôte depuis le thread audio)"]],),
 }
 
 W = A4[0] - 36 * mm
@@ -368,7 +369,7 @@ def section(lang):
     f.append(P(t["fs_t"], "h1")); f += bullets(t["fs"])
     f.append(KeepTogether([Spacer(1, 2 * mm), img(leds_img, W * 0.60), P(t["led_cap"], "small")]))
     f.append(P(t["midi_t"], "h1")); f += [P(x) for x in t["midi_intro"]]
-    f.append(KeepTogether([table([t["midi_hdr"]] + t["midi"], [42 * mm, 26 * mm, W - 68 * mm])]))
+    f.append(KeepTogether([table([t["midi_hdr"]] + t["midi"], [48 * mm, W - 48 * mm])]))
     f.append(P(t["learn_h"], "h2")); f += bullets(t["learn"])
     f.append(P(t["midi_more_h"], "h2")); f += bullets(t["midi_more"])
     f.append(P(t["win_t"], "h1")); f.append(P(t["win"][0]))
