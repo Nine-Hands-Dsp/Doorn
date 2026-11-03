@@ -87,7 +87,7 @@ public:
     std::atomic<float> outLevel { 0.0f };        // niveau de sortie (animation de la LED)
     std::atomic<float> boostShown { 0.0f };      // boost reellement engage (lisse)
 
-    enum MidiMap
+    enum MidiMap                                 // anciens CC d'usine (< v2.13.1), plus assignes par defaut
     {
         ccGain = 20, ccBoost = 21, ccLevel = 22, ccTreble = 23, ccMids = 24, ccBass = 25,
         ccEq = 26,            // >= 64 : EQ on
@@ -99,15 +99,16 @@ public:
     static const char* knobId (int i);
 
     // v2.12 MIDI Learn : toutes les commandes de la facade (meme ordre que la file anti-gel queuedId)
-    // numeros par defaut = anciens CC fixes 20 a 29 (anciens projets et pedaliers inchanges)
+    // v2.13.1 : aucun CC assigne par defaut (MIDI Learn uniquement) ; legacyCC = ancienne table d'usine (CC 20 a 29),
+    // servant seulement a reconnaitre un ancien projet jamais modifie (table videe au chargement)
     enum LearnType { learnContinuous, learnToggle, learnSelector, learnFootswitch };
-    struct LearnDef { const char* id; const char* name; int defaultCC; int type; int positions; };
+    struct LearnDef { const char* id; const char* name; int legacyCC; int type; int positions; };
     static constexpr int numLearn = 10;
     static const LearnDef& learnDef (int i);
     std::atomic<int> ccMap[numLearn];            // numero de CC de chaque commande, -1 = non assigne
     std::atomic<int> learnTarget { -1 };         // commande en attente d'un CC (-1 = pas de learn)
     std::atomic<int> lastLearned { -1 };         // derniere commande apprise (lue et remise a -1 par la fenetre)
-    void resetMidiMap();
+    void clearMidiMap();                         // efface toutes les assignations (aucun CC par defaut)
 
 private:
     void handleMidi (juce::MidiBuffer& midi, int numSamples);

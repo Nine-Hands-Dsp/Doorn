@@ -757,7 +757,7 @@ void DoornAudioProcessorEditor::handleMidiMenu (int r)
     if (r >= 1000 && r < 1000 + DoornAudioProcessor::numLearn)      proc.learnTarget.store (r - 1000);
     else if (r >= 1100 && r < 1100 + DoornAudioProcessor::numLearn) { proc.ccMap[r - 1100].store (-1); }
     else if (r == 1200) proc.learnTarget.store (-1);
-    else if (r == 1201) { proc.learnTarget.store (-1); proc.resetMidiMap(); }
+    else if (r == 1201) { proc.learnTarget.store (-1); proc.clearMidiMap(); }
 }
 
 void DoornAudioProcessorEditor::showContextMenu (int learnIdx)
@@ -818,7 +818,7 @@ void DoornAudioProcessorEditor::showContextMenu (int learnIdx)
     }
     midi.addSeparator();
     if (proc.learnTarget.load() >= 0) midi.addItem (1200, "Cancel MIDI learn");
-    midi.addItem (1201, "Reset MIDI to defaults (CC 20-29)");
+    midi.addItem (1201, "Clear all MIDI assignments");
     midi.addSeparator();
     midi.addItem (910, "CC n+32 = fine (14-bit) for knobs on CC 0-31", false);
     midi.addItem (911, "Program Change 1-13  Factory presets", false);

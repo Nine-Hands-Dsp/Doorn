@@ -50,17 +50,17 @@ Kurt Ballou), guide de montage GCI Brutalist Jr (clone de la SDT-1), photo du ci
 ## MIDI
 
 v2.12.0 : MIDI Learn sur toutes les commandes (clic droit sur une commande ou menu MIDI), assignations sauvegardées avec le projet.
-Numéros par défaut ci-dessous (ceux des versions précédentes) ; clic droit > *MIDI* > *Reset MIDI to defaults* pour y revenir.
+Aucun CC assigné par défaut : clic droit > MIDI > Learn. Clic droit > *MIDI* > *Clear all MIDI assignments* efface toutes les assignations.
 
-| Message | Fonction |
+| Commande apprise | Fonction |
 |---|---|
-| CC 20 / 21 / 22 | Gain / Boost (niveau) / Level |
-| CC 23 / 24 / 25 | Treble / Mids / Bass |
-| CC 52 à 57 | Poids faible 14 bits des CC 20 à 25 (si la pédale l'envoie) |
-| CC 26 | EQ (≥ 64 on) |
-| CC 27 | Mode (0-42 SDT-2, 43-84 Laerm, 85-127 SDT-1) |
-| CC 28 | Footswitch BOOST |
-| CC 29 | Footswitch BYPASS |
+| Gain / Boost (niveau) / Level | Continu (0-127 = toute la course) |
+| Treble / Mids / Bass | Continu |
+| CC n+32 | Poids faible 14 bits d'un potard appris sur un CC 0 à 31 (si la pédale l'envoie) |
+| EQ | Bascule (≥ 64 on) |
+| Mode | Sélecteur (0-42 SDT-2, 43-84 Laerm, 85-127 SDT-1) |
+| Footswitch BOOST | Footswitch |
+| Footswitch BYPASS | Footswitch |
 | Program Change 1 à 13 | Presets d'usine |
 
 Footswitchs MIDI à accrochage (127 = on / 0 = off, par défaut) ou momentanés (bascule à chaque appui) : clic droit > Settings.
@@ -103,3 +103,4 @@ YouTube normalise le volume (les niveaux relatifs ne sont pas mesurables). Donn�
 
 - v2.12.1 : menu de taille de fenêtre : « 60 % (default) », 75 %, 100 % (plus de taille en pixels)
 - v2.13.0 : clic droit > *Plugin size* > *Default size (new windows)* : taille par défaut des nouvelles fenêtres au choix (60 / 75 / 100 %), comme dans Octopus
+- v2.13.1 : plus aucun CC MIDI assigné par défaut (tout passe par le MIDI Learn)

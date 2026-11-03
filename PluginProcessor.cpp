@@ -56,9 +56,9 @@ const DoornAudioProcessor::LearnDef& DoornAudioProcessor::learnDef (int i)
     return defs[jlimit (0, numLearn - 1, i)];
 }
 
-void DoornAudioProcessor::resetMidiMap()
+void DoornAudioProcessor::clearMidiMap()
 {
-    for (int i = 0; i < numLearn; ++i) ccMap[i].store (learnDef (i).defaultCC);
+    for (int i = 0; i < numLearn; ++i) ccMap[i].store (-1);
 }
 
 //==============================================================================
@@ -71,7 +71,7 @@ DoornAudioProcessor::DoornAudioProcessor()
     setLatencySamples (doorn::Engine::latencyInt());
     for (int i = 0; i < numRaw; ++i) rawPtr[i] = apvts.getRawParameterValue (rawIds[i]);
     for (int i = 0; i < numQueued; ++i) { pendingValue[i] = 0.0f; pendingSet[i] = false; }
-    resetMidiMap();
+    clearMidiMap();                              // aucun CC assigne par defaut
     startTimerHz (60);
 }
 
@@ -414,9 +414,16 @@ void DoornAudioProcessor::setStateInformation (const void* data, int size)
         {
             auto state = ValueTree::fromXml (*xml);
             currentPreset = (int) state.getProperty ("currentPreset", 0);
-            // assignations MIDI Learn (ancien projet sans ces proprietes : numeros par defaut 20 a 29)
+            // assignations MIDI Learn (-1 = non assigne ; projet sans ces proprietes : rien d'assigne)
+            // ancien projet dont la table est exactement l'ancienne table d'usine (CC 20 a 29) : jamais modifiee -> videe
+            int loaded[numLearn];
+            bool factory = true;
             for (int i = 0; i < numLearn; ++i)
-                ccMap[i].store (jlimit (-1, 127, (int) state.getProperty (String ("cc_") + learnDef (i).id, learnDef (i).defaultCC)));
+            {
+                loaded[i] = jlimit (-1, 127, (int) state.getProperty (String ("cc_") + learnDef (i).id, -1));
+                factory = factory && loaded[i] == learnDef (i).legacyCC;
+            }
+            for (int i = 0; i < numLearn; ++i) ccMap[i].store (factory ? -1 : loaded[i]);
             apvts.replaceState (state);
             ++presetCounter;
         }

@@ -36,8 +36,9 @@ int main (int argc, char** argv)
     shot ("doorn_sdt2",      3, true,  false, false, DoornAudioProcessorEditor::baseH);
     shot ("doorn_laerm",     4, true,  false, false, DoornAudioProcessorEditor::baseH);
 
-    // test pedale d'expression : course 2..116 sur CC 20 (gain)
+    // test pedale d'expression : course 2..116 sur CC 20 (gain) ; aucun CC par defaut -> CC 20 assigne au gain comme par un MIDI Learn
     {
+        proc.ccMap[0].store (20);
         auto sendCC = [&] (int v)
         {
             AudioBuffer<float> b (2, 256); MidiBuffer m; m.addEvent (MidiMessage::controllerEvent (1, 20, v), 0);
