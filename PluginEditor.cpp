@@ -385,7 +385,7 @@ void DoornAudioProcessorEditor::resized()
 //==============================================================================
 // Anti-gel de la fenetre (Windows) : moteur de rendu logiciel
 //==============================================================================
-// Anti-gel v2 (Studio Wiga) :
+// Anti-gel v2 (NINE HANDS | DSP) :
 //  1. moteur de rendu logiciel force sur Windows (Direct2D peut figer la fenetre dans certains hotes),
 //     applique a chaque nouvelle fenetre hote (peer) et reverifie toutes les secondes, jamais en boucle ;
 //  2. aucun calcul lourd dans paint() : les caches d'images sont reconstruits par le timer seulement,
@@ -824,7 +824,7 @@ void DoornAudioProcessorEditor::showContextMenu (int learnIdx)
     midi.addItem (911, "Program Change 1-13  Factory presets", false);
     menu.addSubMenu ("MIDI", midi);
     menu.addSeparator();
-    menu.addItem (999, "Doorn distortion v" + String (JucePlugin_VersionString) + " - STUDIO WIGA", false);
+    menu.addItem (999, "Doorn distortion v" + String (JucePlugin_VersionString) + " - NINE HANDS | DSP", false);
 
     menu.showMenuAsync (PopupMenu::Options().withTargetComponent (this),
         [safe = Component::SafePointer<DoornAudioProcessorEditor> (this)] (int r)

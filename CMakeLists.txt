@@ -32,7 +32,7 @@ juce_add_binary_data(DoornAssets SOURCES
 set_target_properties(DoornAssets PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 juce_add_plugin(Doorn
-  COMPANY_NAME "Studio Wiga"
+  COMPANY_NAME "NINE HANDS | DSP"
   PLUGIN_MANUFACTURER_CODE Wiga
   PLUGIN_CODE WgDn
   BUNDLE_ID com.studiowiga.doorn

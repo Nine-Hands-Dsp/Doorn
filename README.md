@@ -1,4 +1,4 @@
-# Doorn (Studio Wiga) — VST3
+# Doorn (NINE HANDS | DSP) — VST3
 
 Distorsion high gain au format pédale simple (référence de format : Echoflex), reproduction de la
 **Lichtlaerm Audio Thorn**, la pédale signature de Lennart Bossu (Amenra), elle-même rétro-conçue à partir de la
@@ -12,7 +12,7 @@ Usage personnel. Windows 11 et macOS (binaire universel).
    - **Windows** : copier `Doorn.vst3` dans `C:\Program Files\Common Files\VST3\`
    - **macOS** : dézipper puis copier `Doorn.vst3` dans `~/Library/Audio/Plug-Ins/VST3/`
      (premier lancement : `xattr -cr ~/Library/Audio/Plug-Ins/VST3/Doorn.vst3` si macOS le bloque)
-3. Relancer l'analyse des plugins. Le plugin apparaît comme **Doorn (Studio Wiga)**.
+3. Relancer l'analyse des plugins. Le plugin apparaît comme **Doorn (NINE HANDS | DSP)**.
 
 ## La pédale d'origine et le plugin
 
@@ -38,14 +38,14 @@ Kurt Ballou), guide de montage GCI Brutalist Jr (clone de la SDT-1), photo du ci
 
 ## Interface
 
-- Fenêtre ouverte à **493 px de haut** (391 × 493), impossible de la réduire en dessous, proportions bloquées, jusqu'à 150 % (mêmes réglages qu'Echoflex). Clic droit > *Plugin size* : 60 % / 75 % / 100 % pour cette fenêtre, et *Default size (new windows)* pour choisir la taille d'ouverture de toutes les nouvelles fenêtres de Doorn (réglage enregistré dans `Studio Wiga/Doorn/settings.xml` du dossier de données de l'utilisateur, comme Octopus).
+- Fenêtre ouverte à **493 px de haut** (391 × 493), impossible de la réduire en dessous, proportions bloquées, jusqu'à 150 % (mêmes réglages qu'Echoflex). Clic droit > *Plugin size* : 60 % / 75 % / 100 % pour cette fenêtre, et *Default size (new windows)* pour choisir la taille d'ouverture de toutes les nouvelles fenêtres de Doorn (réglage enregistré dans `NINE HANDS | DSP/Doorn/settings.xml` du dossier de données de l'utilisateur, comme Octopus).
 - **Barre de presets** sous la ligne d'état : flèches = preset précédent / suivant, clic sur le nom = menu (presets d'usine, presets utilisateur 1 à 9).
 - **Ligne d'état** : uniquement le réglage de la commande que l'on bouge (potards en %, inverseurs, footswitchs), en police Poppins, grande et lisible (v2.10 : texte et cadre agrandis, fond plus sombre, barre de presets agrandie aussi) ; apparaît quand un réglage bouge, puis s'efface.
 - **Anti-gel v2** : moteur de rendu logiciel forcé sous Windows (réappliqué à chaque nouvelle fenêtre hôte), fenêtre opaque, timer 30 Hz qui ne redessine que ce qui a changé (aucun redessin au repos), aucun calcul lourd dans le dessin (caches d'images reconstruits par le timer seulement, après stabilisation de la taille ou changement d'échelle), chien de garde qui relance le rendu si un redessin n'arrive pas en 1,5 s, jamais de redimensionnement forcé par la fenêtre ; côté audio, aucun appel à l'hôte ni allocation depuis le thread audio (les changements MIDI passent par une file vidée sur le thread de messages, paramètres lus par pointeurs mis en cache). JUCE 8.0.15.
 - Potards : seul le repère blanc tourne, les reflets du chapeau restent fixes (lumière en haut à gauche). Double-clic = midi.
 - Inverseurs : photo des switchs de la vraie Thorn (positions bas et centre), position haute reconstituée avec la même lumière ; clic = bascule (inverseur 3 positions : clic au-dessus / en dessous du pivot), molette possible.
-- Footswitchs : celui d'Echoflex (référence Studio Wiga), bouton assombri tant qu'on appuie.
-- Jacks du kit Studio Wiga en haut (OUT à gauche, IN à droite), logo Studio Wiga, nom **DOORN** à la place de « THORN ».
+- Footswitchs : celui d'Echoflex (référence NINE HANDS | DSP), bouton assombri tant qu'on appuie.
+- Jacks du kit NINE HANDS | DSP en haut (OUT à gauche, IN à droite), logo NINE HANDS | DSP, nom **DOORN** à la place de « THORN ».
 
 ## MIDI
 

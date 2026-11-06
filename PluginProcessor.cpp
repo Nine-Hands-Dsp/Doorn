@@ -1,4 +1,5 @@
 #include "PluginProcessor.h"
+#include "NineHandsFolder.h"
 #include "PluginEditor.h"
 
 using namespace juce;
@@ -347,7 +348,7 @@ void DoornAudioProcessor::applyFactoryPreset (int index)
 File DoornAudioProcessor::getUserPresetFile()
 {
     return File::getSpecialLocation (File::userApplicationDataDirectory)
-             .getChildFile ("Studio Wiga").getChildFile ("Doorn").getChildFile ("UserPresets.xml");
+             .getChildFile (nhd::folderName()).getChildFile ("Doorn").getChildFile ("UserPresets.xml");
 }
 
 static const char* presetIds[] = { "gain", "boost", "level", "treble", "mids", "bass", "eq", "mode", "boostOn" };

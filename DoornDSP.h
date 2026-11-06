@@ -1,6 +1,6 @@
 #pragma once
 //==============================================================================
-// DOORN (Studio Wiga) - moteur audio, sans dependance JUCE (testable hors plugin).
+// DOORN (NINE HANDS | DSP) - moteur audio, sans dependance JUCE (testable hors plugin).
 //
 // Reproduction de la Lichtlaerm Audio Thorn (signature Lennart Bossu / Amenra),
 // elle-meme derivee de la Providence Stampede SDT-1 :

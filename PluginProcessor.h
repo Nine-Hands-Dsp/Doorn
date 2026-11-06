@@ -7,7 +7,7 @@
 #include "DoornDSP.h"
 
 //==============================================================================
-// DOORN (Studio Wiga) - reproduction de la distorsion Lichtlaerm Audio Thorn
+// DOORN (NINE HANDS | DSP) - reproduction de la distorsion Lichtlaerm Audio Thorn
 // (signature Lennart Bossu / Amenra, d'apres la Providence Stampede SDT-1).
 // Voir README.md et DoornDSP.h.
 //==============================================================================

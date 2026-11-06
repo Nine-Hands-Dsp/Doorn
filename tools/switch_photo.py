@@ -1,5 +1,5 @@
 """
-Doorn (Studio Wiga) - inverseurs a levier tires de la photo de la vraie Thorn
+Doorn (NINE HANDS | DSP) - inverseurs a levier tires de la photo de la vraie Thorn
 (design/switch_photo/thorn_switches.png : switch EQ levier en bas, switch MODE levier au centre).
 
 Les deux positions photographiees sont reprises telles quelles ; la troisieme (levier en haut) est

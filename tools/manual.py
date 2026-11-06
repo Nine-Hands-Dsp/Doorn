@@ -1,4 +1,4 @@
-# DOORN (Studio Wiga) - notice PDF bilingue (anglais puis francais), illustree avec le rendu reel du plugin.
+# DOORN (NINE HANDS | DSP) - notice PDF bilingue (anglais puis francais), illustree avec le rendu reel du plugin.
 # Usage : python3 tools/manual.py <dossier des captures (tools/render)> <fichier PDF de sortie>
 #   ou   : python3 tools/manual.py tools/manual_assets <fichier PDF> (images deja composees, reprises de la notice precedente)
 # Si le dossier ne contient pas les captures brutes (doorn_status.png...) mais les images deja composees
@@ -182,13 +182,13 @@ T = {
 "en": dict(
  lang="ENGLISH", sub="High gain distortion &nbsp;·&nbsp; VST3 for Windows and macOS", ver="User manual &nbsp;·&nbsp; version " + VERSION,
  intro_t="1. Introduction",
- intro=["<b>DOORN</b> (Dutch for <i>thorn</i>) is a Studio Wiga plugin modelled on the <b>Lichtlaerm Audio Thorn</b>, the signature distortion of <b>Lennart Bossu</b> (Amenra, Oathbreaker). The Thorn itself was reverse-engineered from Lennart's own <b>Providence Stampede SDT-1</b>, the rare Japanese hard distortion also used by Kurt Ballou of Converge, expanded with three voicings, a footswitchable additive boost and an active 3-band EQ that can be lifted out of the circuit.",
+ intro=["<b>DOORN</b> (Dutch for <i>thorn</i>) is a NINE HANDS | DSP plugin modelled on the <b>Lichtlaerm Audio Thorn</b>, the signature distortion of <b>Lennart Bossu</b> (Amenra, Oathbreaker). The Thorn itself was reverse-engineered from Lennart's own <b>Providence Stampede SDT-1</b>, the rare Japanese hard distortion also used by Kurt Ballou of Converge, expanded with three voicings, a footswitchable additive boost and an active 3-band EQ that can be lifted out of the circuit.",
         "The sound is a wall of distortion rather than an overdrive: an aggressive, biting edge with a singing midrange, strong even harmonics that make pinch harmonics jump out, and a big low end that stays defined on chords. It is close to a cranked amp head, and it never really goes clean, even with the gain down.",
         "In the plugin the circuit is modelled stage by stage: input buffer and high-pass (tightness), mid pre-emphasis, two op-amp gain stages running on about 18 V (the Thorn uses an internal charge pump, the LT1054 on its circuit board, for a high headroom), clipping diodes to ground, op-amp roll-off, an amp-like output stage, then the bypassable EQ and the level. The distortion is computed with 4x oversampling to stay smooth and free of aliasing."],
  inst_t="2. Installation",
- inst=[("Windows", "Download the <b>Doorn-VST3-Windows</b> artifact from the Actions tab of the GitHub repository studiowiga/Doorn, unzip it and copy the <b>Doorn.vst3</b> folder into <b>C:\\Program Files\\Common Files\\VST3</b>."),
+ inst=[("Windows", "Download the <b>Doorn-VST3-Windows</b> artifact from the Actions tab of the GitHub repository Nine-Hands-Dsp/Doorn, unzip it and copy the <b>Doorn.vst3</b> folder into <b>C:\\Program Files\\Common Files\\VST3</b>."),
        ("macOS", "Download <b>Doorn-VST3-macOS</b>, unzip it and copy <b>Doorn.vst3</b> into <b>~/Library/Audio/Plug-Ins/VST3</b>. If macOS blocks it, run <b>xattr -cr ~/Library/Audio/Plug-Ins/VST3/Doorn.vst3</b> in the Terminal. The binary is universal (Apple Silicon and Intel)."),
-       ("Reaper", "Options &gt; Preferences &gt; Plug-ins &gt; VST &gt; <b>Re-scan</b>. The plugin appears as <b>Doorn (Studio Wiga)</b>. To control it from your MIDI footswitches and expression pedals, the track must receive MIDI from the controller (record-arm or input monitoring, MIDI input set to your device, e.g. the M-Vave Chocolate Plus).")],
+       ("Reaper", "Options &gt; Preferences &gt; Plug-ins &gt; VST &gt; <b>Re-scan</b>. The plugin appears as <b>Doorn (NINE HANDS | DSP)</b>. To control it from your MIDI footswitches and expression pedals, the track must receive MIDI from the controller (record-arm or input monitoring, MIDI input set to your device, e.g. the M-Vave Chocolate Plus).")],
  ov_t="3. Interface overview",
  ov_rows=[["#", "Control", "Role"],
    ["1", "GAIN", "Amount of distortion. Drag up / down, mouse wheel, double-click = noon, right-click = MIDI Learn (true for every control)."],
@@ -249,7 +249,7 @@ T = {
  tips=["In Reaper place Doorn <b>before</b> your amp simulator (for example before Two Notes Genome) with a fairly clean amp, as you would with the real pedal. With a crunch amp, lower the gain: the Stampede already has a lot.",
        "For low tunings (B standard like Amenra, or a 7-string in G and lower), keep BASS around noon to 1 o'clock and use the BOOST: it tightens the low end without losing weight.",
        "The original reviewer's favourite modes are SDT-1 and Laerm; SDT-2 is perfect for long, saturated chords.",
-       "If some hiss remains when you stop playing, set right-click &gt; Noise gate to Strong; for very tight stops on staccato riffs, NGATE from Studio Wiga can still be added after Doorn."],
+       "If some hiss remains when you stop playing, set right-click &gt; Noise gate to Strong; for very tight stops on staccato riffs, NGATE from NINE HANDS | DSP can still be added after Doorn."],
  tech_t="10. Specifications",
  tech=[["Format", "VST3 (Windows 64-bit, macOS universal)"], ["Channels", "Mono or stereo"],
        ["Latency", "32 samples (oversampling filter), reported to the DAW"], ["Gain", "about 26 to 72 dB, + 0 to 20 dB boost"],
@@ -260,13 +260,13 @@ T = {
 "fr": dict(
  lang="FRANÇAIS", sub="Distorsion high gain &nbsp;·&nbsp; VST3 pour Windows et macOS", ver="Notice d'utilisation &nbsp;·&nbsp; version " + VERSION,
  intro_t="1. Présentation",
- intro=["<b>DOORN</b> (« épine » en néerlandais) est un plugin Studio Wiga inspiré de la <b>Lichtlaerm Audio Thorn</b>, la distorsion signature de <b>Lennart Bossu</b> (Amenra, Oathbreaker). La Thorn a elle-même été rétro-conçue à partir de la <b>Providence Stampede SDT-1</b> de Lennart, une distorsion dure japonaise rare, aussi utilisée par Kurt Ballou de Converge ; Lichtlaerm y a ajouté trois voix, un boost additif au pied et un EQ actif 3 bandes que l'on peut retirer du circuit.",
+ intro=["<b>DOORN</b> (« épine » en néerlandais) est un plugin NINE HANDS | DSP inspiré de la <b>Lichtlaerm Audio Thorn</b>, la distorsion signature de <b>Lennart Bossu</b> (Amenra, Oathbreaker). La Thorn a elle-même été rétro-conçue à partir de la <b>Providence Stampede SDT-1</b> de Lennart, une distorsion dure japonaise rare, aussi utilisée par Kurt Ballou de Converge ; Lichtlaerm y a ajouté trois voix, un boost additif au pied et un EQ actif 3 bandes que l'on peut retirer du circuit.",
         "Le son est un mur de distorsion plutôt qu'un overdrive : un mordant agressif, des médiums qui chantent, de fortes harmoniques paires qui font ressortir les harmoniques pincées, et un grave énorme qui reste défini sur les accords. C'est proche d'une tête d'ampli poussée à fond, et cela ne devient jamais vraiment clair, même gain baissé.",
         "Dans le plugin, le circuit est reproduit étage par étage : buffer d'entrée et passe-haut (tenue du grave), pré-accentuation des médiums, deux étages de gain à ampli op alimentés sous environ 18 V (la Thorn utilise une pompe de charge interne, le LT1054 visible sur son circuit imprimé, pour une grande réserve de dynamique), diodes d'écrêtage à la masse, filtrage de l'ampli op, étage de sortie façon ampli, puis l'EQ bypassable et le volume. La distorsion est calculée avec un sur-échantillonnage x4 pour rester douce et sans repliement."],
  inst_t="2. Installation",
- inst=[("Windows", "Téléchargez l'artefact <b>Doorn-VST3-Windows</b> dans l'onglet Actions du dépôt GitHub studiowiga/Doorn, décompressez-le et copiez le dossier <b>Doorn.vst3</b> dans <b>C:\\Program Files\\Common Files\\VST3</b>."),
+ inst=[("Windows", "Téléchargez l'artefact <b>Doorn-VST3-Windows</b> dans l'onglet Actions du dépôt GitHub Nine-Hands-Dsp/Doorn, décompressez-le et copiez le dossier <b>Doorn.vst3</b> dans <b>C:\\Program Files\\Common Files\\VST3</b>."),
        ("macOS", "Téléchargez <b>Doorn-VST3-macOS</b>, décompressez-le et copiez <b>Doorn.vst3</b> dans <b>~/Bibliothèque/Audio/Plug-Ins/VST3</b>. Si macOS le bloque, tapez <b>xattr -cr ~/Library/Audio/Plug-Ins/VST3/Doorn.vst3</b> dans le Terminal. Le binaire est universel (Apple Silicon et Intel)."),
-       ("Reaper", "Options &gt; Préférences &gt; Plug-ins &gt; VST &gt; <b>Re-scan</b>. Le plugin apparaît sous le nom <b>Doorn (Studio Wiga)</b>. Pour le piloter avec vos footswitchs et pédales d'expression MIDI, la piste doit recevoir le MIDI du contrôleur (armement ou monitoring d'entrée, entrée MIDI réglée sur votre appareil, par exemple la M-Vave Chocolate Plus).")],
+       ("Reaper", "Options &gt; Préférences &gt; Plug-ins &gt; VST &gt; <b>Re-scan</b>. Le plugin apparaît sous le nom <b>Doorn (NINE HANDS | DSP)</b>. Pour le piloter avec vos footswitchs et pédales d'expression MIDI, la piste doit recevoir le MIDI du contrôleur (armement ou monitoring d'entrée, entrée MIDI réglée sur votre appareil, par exemple la M-Vave Chocolate Plus).")],
  ov_t="3. Vue d'ensemble de l'interface",
  ov_rows=[["#", "Commande", "Rôle"],
    ["1", "GAIN", "Quantité de distorsion. Glisser vers le haut / le bas, molette, double-clic = midi, clic droit = MIDI Learn (valable pour toutes les commandes)."],
@@ -327,7 +327,7 @@ T = {
  tips=["Dans Reaper, placez Doorn <b>avant</b> votre simulateur d'ampli (par exemple avant Two Notes Genome) avec un ampli assez clair, comme avec la vraie pédale. Avec un ampli crunch, baissez le gain : la Stampede en a déjà beaucoup.",
        "Pour les accordages bas (Si standard comme Amenra, ou une 7 cordes en Sol et plus bas), gardez BASS entre midi et 13 h et servez-vous du BOOST : il resserre le grave sans perdre de poids.",
        "Les modes préférés du testeur d'origine sont SDT-1 et Laerm ; SDT-2 est parfait pour les longs accords saturés.",
-       "S'il reste du souffle quand vous arrêtez de jouer, passez clic droit &gt; Noise gate sur Strong ; pour des arrêts très secs sur les riffs saccadés, NGATE de Studio Wiga peut toujours être ajouté après Doorn."],
+       "S'il reste du souffle quand vous arrêtez de jouer, passez clic droit &gt; Noise gate sur Strong ; pour des arrêts très secs sur les riffs saccadés, NGATE de NINE HANDS | DSP peut toujours être ajouté après Doorn."],
  tech_t="10. Caractéristiques techniques",
  tech=[["Format", "VST3 (Windows 64 bits, macOS universel)"], ["Canaux", "Mono ou stéréo"],
        ["Latence", "32 échantillons (filtre de sur-échantillonnage), annoncée au DAW"], ["Gain", "environ 26 à 72 dB, + 0 à 20 dB de boost"],
@@ -394,12 +394,12 @@ def deco(c, doc):
     c.setFillColor(DARK); c.rect(0, A4[1] - 6 * mm, A4[0], 6 * mm, stroke=0, fill=1)
     c.setFillColor(ACC); c.rect(0, A4[1] - 6.8 * mm, A4[0], 0.8 * mm, stroke=0, fill=1)
     c.setFont("Pop", 7.5); c.setFillColor(GREY)
-    c.drawString(18 * mm, 10 * mm, "Doorn (Studio Wiga) · v" + VERSION)
+    c.drawString(18 * mm, 10 * mm, "Doorn (NINE HANDS | DSP) · v" + VERSION)
     c.drawRightString(A4[0] - 18 * mm, 10 * mm, str(doc.page))
     c.restoreState()
 
 doc = BaseDocTemplate(OUT, pagesize=A4, leftMargin=18 * mm, rightMargin=18 * mm, topMargin=16 * mm, bottomMargin=18 * mm,
-                      title="DOORN - Manual / Notice v" + VERSION, author="Studio Wiga")
+                      title="DOORN - Manual / Notice v" + VERSION, author="NINE HANDS | DSP")
 def cover_bg(c, doc):
     c.saveState(); c.setFillColor(colors.black); c.rect(0, 0, A4[0], A4[1], stroke=0, fill=1)
     c.setFillColor(ACC); c.rect(0, A4[1] - 3 * mm, A4[0], 3 * mm, stroke=0, fill=1); c.restoreState()

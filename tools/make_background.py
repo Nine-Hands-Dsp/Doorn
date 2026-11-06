@@ -1,12 +1,12 @@
 """
-Doorn (Studio Wiga) - construction du fond du plugin a partir du visuel fourni.
+Doorn (NINE HANDS | DSP) - construction du fond du plugin a partir du visuel fourni.
 
 - detoure la pedale (fond blanc de la photo),
 - efface les reperes des potards (ils sont redessines et tournent dans le plugin),
 - efface les inverseurs et les footswitches d'origine (remplaces par les rendus 3D
   et par le footswitch d'Echoflex) en reprenant la texture de la facade,
 - corrige les inscriptions (« byprns » -> « bypass », « cq » -> « eq »),
-- ajoute le nom « Doorn » et le logo Studio Wiga,
+- ajoute le nom « Doorn » et le logo NINE HANDS | DSP,
 - pose la pedale sur un fond sombre dans le cadre 1520 x 1916 (= 2 x 760 x 958, cadrage Echoflex),
 - calcule les calques d'eclairage de la facade par la LED (rouge et ambre).
 
@@ -62,7 +62,7 @@ m = (lab == 1 + np.argmax(st[1:, 4])).astype(np.uint8) * 255
 ff = m.copy(); fm = np.zeros((H + 2, W + 2), np.uint8); cv2.floodFill(ff, fm, (0, 0), 128)
 MASK = (ff != 128).astype(np.float32)
 # jacks du dessus retires : la pedale commence au bord du boitier
-# jacks d'origine du dessus retires (remplaces par les embases du kit Studio Wiga)
+# jacks d'origine du dessus retires (remplaces par les embases du kit NINE HANDS | DSP)
 MASK[:RIM_Y] = 0
 src_rim = A[RIM_Y:RIM_Y + 10, 975:1075].copy()
 for xa, xb in ((768, 960), (1092, 1284)):
@@ -266,7 +266,7 @@ TITLE_C = (1028, 1549)      # comme « THORN » : entre les deux footswitchs, un
 TITLE_BOX = draw_text('DOORN', TITLE_C[0], TITLE_C[1], 44, track=2, font=TITLE_FONT, grow=2)
 
 
-# logo Studio Wiga sous les footswitches
+# logo NINE HANDS | DSP sous les footswitches
 logo = Image.open(os.path.join(ASSETS, 'logo_studio_wiga_blanc.png')).convert('RGBA')
 LW = 172
 logo = logo.resize((LW, round(logo.height * LW / logo.width)), Image.LANCZOS)
@@ -313,7 +313,7 @@ fa = np.asarray(fm_).astype(np.float32)[..., None] / 255
 SIL = fa[..., 0].copy()             # silhouette (boitier + jacks) pour la couverture de la notice
 canvas = canvas * (1 - fa) + np.asarray(full).astype(np.float32) * fa
 
-# embases jack du kit Studio Wiga, sortant du dessus du boitier aux places d'origine (OUT a gauche, IN a droite)
+# embases jack du kit NINE HANDS | DSP, sortant du dessus du boitier aux places d'origine (OUT a gauche, IN a droite)
 JL = 196.0 * SC                              # longueur de l'embase dans le fond 2x
 jk = Image.open(os.path.join(ASSETS, 'embase_jack_gauche_OUT.png')).convert('RGBA')
 jk = jk.crop(jk.getbbox()).rotate(-90, expand=True)          # dome vers le haut
