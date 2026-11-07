@@ -28,6 +28,7 @@
 #include <algorithm>
 #include <cstring>
 
+// v2.16 : les trois modes au meme volume (Laerm -4,3 dB, SDT-2 +2,8 dB de compensation).
 // v2.15 : LEVEL 10 dB plus bas sur toute sa course (plus de saturation de la sortie dans le DAW au-dela de midi) ;
 //         couche fuzz reduite a ~13 % du son (texture legere), compensee par les diodes : meme niveau, meme equilibre tonal.
 // v2.14 : fin du grésillement sifflant : l'ecretage numerique repliait ses harmoniques au-dela de 96 kHz en sifflement
@@ -418,10 +419,12 @@ namespace doorn
         {
             // v1.6 : le mordant du boost est integre a la voix de base (passe-haut d'entree plus haut, attaque mise en avant,
             // ecretage plus franc, plus de presence) ; le boost s'ajoute toujours par-dessus
-            // SDT-2 : plus compresse et sature, plus sombre, un peu moins fort
-            { 200.0f, 950.0f, 0.75f, 6.0f,   5.0f,  0.28f, 0.26f, 5.0f, 1.0f, 6200.0f,  5.5f, 5000.0f, -3.5f, 2.0f, -1.0f, 0.09f },
-            // LAERM : plus ouvert, plus direct, plus fort (seuil haut type LED)
-            { 165.0f, 1300.0f, 0.60f, 4.0f, -1.5f,  0.70f, 0.60f, 5.5f, 0.0f, 10000.0f, 4.5f, 7000.0f, -1.0f, 3.0f, -1.6f, 0.05f },
+            // SDT-2 : plus compresse et sature, plus sombre
+            // v2.16 : volume aligne sur SDT-1 (il sortait ~2,7 dB moins fort)
+            { 200.0f, 950.0f, 0.75f, 6.0f,   5.0f,  0.28f, 0.26f, 5.0f, 1.0f, 6200.0f,  5.5f, 5000.0f, -3.5f, 2.0f,  1.8f, 0.09f },
+            // LAERM : plus ouvert, plus direct (seuil haut type LED)
+            // v2.16 : volume aligne sur SDT-1 (les LED ecretent ~2 fois plus haut : il sortait ~4 dB plus fort)
+            { 165.0f, 1300.0f, 0.60f, 4.0f, -1.5f,  0.70f, 0.60f, 5.5f, 0.0f, 10000.0f, 4.5f, 7000.0f, -1.0f, 3.0f, -5.9f, 0.05f },
             // SDT-1 : la Stampede d'origine (silicium a la masse, mediums chantants)
             { 185.0f, 1100.0f, 0.70f, 6.0f,   2.0f,  0.34f, 0.31f, 6.0f, 0.0f, 7800.0f,  5.5f, 5600.0f, -2.0f, 2.5f,  0.0f, 0.09f },
         };
