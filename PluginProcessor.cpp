@@ -98,7 +98,7 @@ AudioProcessorValueTreeState::ParameterLayout DoornAudioProcessor::createLayout(
     p.push_back (std::make_unique<AudioParameterBool>   (ParameterID { "eq", 1 },      "EQ", d.eq != 0));
     p.push_back (std::make_unique<AudioParameterChoice> (ParameterID { "mode", 1 },    "Mode", modeNames(), d.mode));
     p.push_back (std::make_unique<AudioParameterBool>   (ParameterID { "boostOn", 1 }, "Boost Footswitch", d.boostOn != 0));
-    p.push_back (std::make_unique<AudioParameterBool>   (ParameterID { "active", 1 },  "Bypass Footswitch", true));
+    p.push_back (std::make_unique<AudioParameterBool>   (ParameterID { "active", 1 },  "Footswitch", true));
     // reglages (menu clic droit)
     p.push_back (std::make_unique<AudioParameterBool>   (ParameterID { "holdMomentary", 1 }, "Hold = Momentary", true));
     p.push_back (std::make_unique<AudioParameterChoice> (ParameterID { "midiFsMode", 1 }, "MIDI Footswitch Mode",

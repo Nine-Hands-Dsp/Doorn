@@ -19,7 +19,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SHOTS = sys.argv[1]
 OUT = sys.argv[2]
-VERSION = "2.13.1"
+VERSION = "2.14.0"
 TMP = os.path.dirname(os.path.abspath(OUT))
 FONTS = os.path.join(ROOT, "assets", "fonts")
 
@@ -184,7 +184,7 @@ T = {
  intro_t="1. Introduction",
  intro=["<b>DOORN</b> (Dutch for <i>thorn</i>) is a NINE HANDS | DSP plugin modelled on the <b>Lichtlaerm Audio Thorn</b>, the signature distortion of <b>Lennart Bossu</b> (Amenra, Oathbreaker). The Thorn itself was reverse-engineered from Lennart's own <b>Providence Stampede SDT-1</b>, the rare Japanese hard distortion also used by Kurt Ballou of Converge, expanded with three voicings, a footswitchable additive boost and an active 3-band EQ that can be lifted out of the circuit.",
         "The sound is a wall of distortion rather than an overdrive: an aggressive, biting edge with a singing midrange, strong even harmonics that make pinch harmonics jump out, and a big low end that stays defined on chords. It is close to a cranked amp head, and it never really goes clean, even with the gain down.",
-        "In the plugin the circuit is modelled stage by stage: input buffer and high-pass (tightness), mid pre-emphasis, two op-amp gain stages running on about 18 V (the Thorn uses an internal charge pump, the LT1054 on its circuit board, for a high headroom), clipping diodes to ground, op-amp roll-off, an amp-like output stage, then the bypassable EQ and the level. The distortion is computed with 4x oversampling to stay smooth and free of aliasing."],
+        "In the plugin the circuit is modelled stage by stage: input buffer and high-pass (tightness), mid pre-emphasis, two op-amp gain stages running on about 18 V (the Thorn uses an internal charge pump, the LT1054 on its circuit board, for a high headroom), clipping diodes to ground, op-amp roll-off, an amp-like output stage, then the bypassable EQ and the level. The distortion is computed with 4x oversampling and anti-aliased clippers (antiderivative method), with a natural, rounded diode curve: no inharmonic hiss or sizzle in the treble."],
  inst_t="2. Installation",
  inst=[("Windows", "Download the <b>Doorn-VST3-Windows</b> artifact from the Actions tab of the GitHub repository Nine-Hands-Dsp/Doorn, unzip it and copy the <b>Doorn.vst3</b> folder into <b>C:\\Program Files\\Common Files\\VST3</b>."),
        ("macOS", "Download <b>Doorn-VST3-macOS</b>, unzip it and copy <b>Doorn.vst3</b> into <b>~/Library/Audio/Plug-Ins/VST3</b>. If macOS blocks it, run <b>xattr -cr ~/Library/Audio/Plug-Ins/VST3/Doorn.vst3</b> in the Terminal. The binary is universal (Apple Silicon and Intel)."),
@@ -254,7 +254,7 @@ T = {
  tech=[["Format", "VST3 (Windows 64-bit, macOS universal)"], ["Channels", "Mono or stereo"],
        ["Latency", "32 samples (oversampling filter), reported to the DAW"], ["Gain", "about 26 to 72 dB, + 0 to 20 dB boost"],
        ["EQ", "bass 90 Hz + 120 Hz punch -15 / +18 dB, mids 750 Hz ±5 dB, treble 4 kHz -5 / +16 dB, bypassable"],
-       ["Processing", "4x oversampling, smoothed parameters, no denormals"], ["CPU", "about 4 % of one core at 48 kHz (stereo)"],
+       ["Processing", "4x oversampling, anti-aliased clippers (ADAA), smoothed parameters, no denormals"], ["CPU", "about 5 % of one core at 48 kHz (stereo)"],
        ["MIDI", "all channels; MIDI Learn on the 10 controls (no CC assigned by default), 14-bit CC, Program Change 1-13; assignments saved with the project"],
        ["Window", "60 % / 75 % / 100 % (Plugin size), default size of new windows to choose, up to 150 %, never smaller than 60 %; anti-freeze v2 under Windows (software rendering, watchdog, no host call from the audio thread)"]],),
 "fr": dict(
@@ -262,7 +262,7 @@ T = {
  intro_t="1. Présentation",
  intro=["<b>DOORN</b> (« épine » en néerlandais) est un plugin NINE HANDS | DSP inspiré de la <b>Lichtlaerm Audio Thorn</b>, la distorsion signature de <b>Lennart Bossu</b> (Amenra, Oathbreaker). La Thorn a elle-même été rétro-conçue à partir de la <b>Providence Stampede SDT-1</b> de Lennart, une distorsion dure japonaise rare, aussi utilisée par Kurt Ballou de Converge ; Lichtlaerm y a ajouté trois voix, un boost additif au pied et un EQ actif 3 bandes que l'on peut retirer du circuit.",
         "Le son est un mur de distorsion plutôt qu'un overdrive : un mordant agressif, des médiums qui chantent, de fortes harmoniques paires qui font ressortir les harmoniques pincées, et un grave énorme qui reste défini sur les accords. C'est proche d'une tête d'ampli poussée à fond, et cela ne devient jamais vraiment clair, même gain baissé.",
-        "Dans le plugin, le circuit est reproduit étage par étage : buffer d'entrée et passe-haut (tenue du grave), pré-accentuation des médiums, deux étages de gain à ampli op alimentés sous environ 18 V (la Thorn utilise une pompe de charge interne, le LT1054 visible sur son circuit imprimé, pour une grande réserve de dynamique), diodes d'écrêtage à la masse, filtrage de l'ampli op, étage de sortie façon ampli, puis l'EQ bypassable et le volume. La distorsion est calculée avec un sur-échantillonnage x4 pour rester douce et sans repliement."],
+        "Dans le plugin, le circuit est reproduit étage par étage : buffer d'entrée et passe-haut (tenue du grave), pré-accentuation des médiums, deux étages de gain à ampli op alimentés sous environ 18 V (la Thorn utilise une pompe de charge interne, le LT1054 visible sur son circuit imprimé, pour une grande réserve de dynamique), diodes d'écrêtage à la masse, filtrage de l'ampli op, étage de sortie façon ampli, puis l'EQ bypassable et le volume. La distorsion est calculée avec un sur-échantillonnage x4 et des écrêteurs anti-repliement (méthode par primitive), avec une courbe de diode arrondie et naturelle : aucun sifflement ni grésillement inharmonique dans l'aigu."],
  inst_t="2. Installation",
  inst=[("Windows", "Téléchargez l'artefact <b>Doorn-VST3-Windows</b> dans l'onglet Actions du dépôt GitHub Nine-Hands-Dsp/Doorn, décompressez-le et copiez le dossier <b>Doorn.vst3</b> dans <b>C:\\Program Files\\Common Files\\VST3</b>."),
        ("macOS", "Téléchargez <b>Doorn-VST3-macOS</b>, décompressez-le et copiez <b>Doorn.vst3</b> dans <b>~/Bibliothèque/Audio/Plug-Ins/VST3</b>. Si macOS le bloque, tapez <b>xattr -cr ~/Library/Audio/Plug-Ins/VST3/Doorn.vst3</b> dans le Terminal. Le binaire est universel (Apple Silicon et Intel)."),
@@ -332,7 +332,7 @@ T = {
  tech=[["Format", "VST3 (Windows 64 bits, macOS universel)"], ["Canaux", "Mono ou stéréo"],
        ["Latence", "32 échantillons (filtre de sur-échantillonnage), annoncée au DAW"], ["Gain", "environ 26 à 72 dB, + 0 à 20 dB de boost"],
        ["EQ", "graves 90 Hz + punch 120 Hz -15 / +18 dB, médiums 750 Hz ±5 dB, aigus 4 kHz -5 / +16 dB, bypassable"],
-       ["Traitement", "sur-échantillonnage x4, paramètres lissés, pas de dénormaux"], ["Processeur", "environ 4 % d'un cœur à 48 kHz (stéréo)"],
+       ["Traitement", "sur-échantillonnage x4, écrêteurs anti-repliement (ADAA), paramètres lissés, pas de dénormaux"], ["Processeur", "environ 5 % d'un cœur à 48 kHz (stéréo)"],
        ["MIDI", "tous les canaux ; MIDI Learn sur les 10 commandes (aucun CC assigné par défaut), CC 14 bits, Program Change 1-13 ; assignations sauvegardées avec le projet"],
        ["Fenêtre", "60 % / 75 % / 100 % (Plugin size), taille par défaut des nouvelles fenêtres au choix, jusqu'à 150 %, jamais sous 60 % ; anti-gel v2 sous Windows (rendu logiciel, chien de garde, aucun appel à l'hôte depuis le thread audio)"]],),
 }

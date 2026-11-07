@@ -28,6 +28,10 @@
 #include <algorithm>
 #include <cstring>
 
+// v2.14 : fin du grésillement sifflant : l'ecretage numerique repliait ses harmoniques au-dela de 96 kHz en sifflement
+//         inharmonique qui suit la note (mesure : -33 a -39 dB sous la note dans l'aigu). Ecreteurs a primitive (ADAA)
+//         en tangente hyperbolique (diodes / transistors, coude naturel, plus doux que l'ancien coude dur) : -52 a -68 dB.
+//         Voix recalee sur la video avec ces ecreteurs ; bosse fixe de presence 2,9 kHz retiree, plateau aigu -2,5 dB.
 // v2.11 : calage sur la video Dirty Demos « Michael Klein SPD100 + Lichtlaerm Audio Thorn » (audio capture et
 //         mesure en 1/3 d'octave, reglages releves image par image, comparaison a travers deux reponses de baffle 4x12 SM57) :
 //         voix fixe apres l'ecretage (moins de 400 Hz - 1,5 kHz, presence 2,2 kHz au lieu de 3,2 kHz, poussee 900 Hz retiree),
@@ -103,7 +107,7 @@
  #define DOORN_LOW_DB -1.0
 #endif
 #ifndef DOORN_HIGH_DB
- #define DOORN_HIGH_DB 3.5
+ #define DOORN_HIGH_DB 1.0     // v2.14 : plateau aigu de sortie -2,5 dB
 #endif
 #ifndef DOORN_LP_SCALE
  #define DOORN_LP_SCALE 1.35
@@ -154,7 +158,7 @@
 // v2.11 : voix calee sur la video « Michael Klein SPD100 + Lichtlaerm Audio Thorn » (Dirty Demos) :
 // egaliseur fixe apres l'ecretage, gains obtenus par moindres carres sur le spectre moyen de la vraie Thorn
 #ifndef DOORN_VEQ
- #define DOORN_VEQ 1.4, 2.2, -1.1, -4.3, -3.5, -0.9, 1.0, 2.5
+ #define DOORN_VEQ 0.5, 3.0, -1.2, -5.5, -3.4, 1.4, 2.4, 3.0   // v2.14 : recale avec les ecreteurs anti-repliement
 #endif
 #ifndef DOORN_TREB_K
  #define DOORN_TREB_K 2.0
@@ -173,6 +177,27 @@
 #endif
 #ifndef DOORN_BOOST_LVL
  #define DOORN_BOOST_LVL 1.5f
+#endif
+#ifndef DOORN_KNEE_K
+ #define DOORN_KNEE_K 1.0f
+#endif
+#ifndef DOORN_ADAA
+ #define DOORN_ADAA 1
+#endif
+#ifndef DOORN_VF_K
+ #define DOORN_VF_K 1.0f
+#endif
+#ifndef DOORN_DYN_BASS
+ #define DOORN_DYN_BASS 1.0f
+#endif
+#ifndef DOORN_DYN_OUT
+ #define DOORN_DYN_OUT 1.0f
+#endif
+#ifndef DOORN_PRES_K
+ #define DOORN_PRES_K 0.0     // v2.14 : bosse fixe de presence 2,9 kHz retiree (zone sifflante, absente de la vraie Thorn)
+#endif
+#ifndef DOORN_OSF
+ #define DOORN_OSF 4
 #endif
 namespace doorn
 {
@@ -261,12 +286,35 @@ namespace doorn
     };
 
     //--------------------------------------------------------------------------
+    // v2.14 : ecretage anti-repliement (ADAA du 1er ordre) : la sortie est la moyenne exacte de la courbe
+    // d'ecretage entre deux echantillons, calculee avec sa primitive -> les harmoniques au-dela de la moitie de la
+    // frequence d'echantillonnage ne reviennent plus en sifflement / grésillement inharmonique dans l'aigu.
+    // Courbe : tangente hyperbolique (diode / transistor), seuil different en positif et en negatif (asymetrie).
+    inline double logCosh (double x) { const double a = std::abs (x); return a + std::log1p (std::exp (-2.0 * a)) - 0.6931471805599453; }
+    struct AdaaTanh
+    {
+        double xp = 0.0;
+        // y = lim * tanh (x / lim), lim = limPos si x >= 0, limNeg sinon ; primitive : lim^2 * logcosh (x / lim)
+        static inline double F (double x, double lp, double ln) { const double l = x >= 0 ? lp : ln; return l * l * logCosh (x / l); }
+        static inline double f (double x, double lp, double ln) { const double l = x >= 0 ? lp : ln; return l * std::tanh (x / l); }
+        inline float process (float xf, float limPos, float limNeg) noexcept
+        {
+            const double x = xf, d = x - xp;
+            const double y = std::abs (d) > 1.0e-5 ? (F (x, limPos, limNeg) - F (xp, limPos, limNeg)) / d
+                                                   : f (0.5 * (x + xp), limPos, limNeg);
+            xp = x;
+            return (float) y;
+        }
+        void reset() { xp = 0.0; }
+    };
+
+    //--------------------------------------------------------------------------
     // Sur-echantillonnage x4 : filtre RIF a phase lineaire (sinc fenetre de Kaiser)
     // en polyphase pour la montee et la descente.
     struct Oversampler4
     {
-        static constexpr int factor = 4;
-        static constexpr int taps = 128;          // multiple de 4
+        static constexpr int factor = DOORN_OSF;
+        static constexpr int taps = 32 * DOORN_OSF;   // 32 coefficients par phase
         float h[taps] {};
         float hist[taps * 2] {};                  // ligne a retard (entree x4) doublee pour lecture contigue
         int   pos = 0;
@@ -403,6 +451,7 @@ namespace doorn
             for (auto* b : { &hp, &hp2, &preBite, &preMud, &outScoop, &outSub, &prePeak, &preLP, &post1, &post2, &outLow, &outHigh, &outPres, &outLowMid, &outFat, &outMidPush, &outHiMid, &eqBass, &eqBassPunch, &eqMid, &eqTreb, &eqTrebAir, &boostPres, &preEdge, &outClar, &outAir, &outFizz, &preLP2, &veq[0], &veq[1], &veq[2], &veq[3], &veq[4], &veq[5], &veq[6], &veq[7] })
                 b->reset();
             dcIn.reset(); dcOut.reset(); inter.reset(); st1lp.reset(); fzHP.reset(); fzLP.reset(); bassLP.reset(); env = ref = 0.0f;
+            for (auto* n : { &nl1, &nl2, &nlComp, &nlF1, &nlF2 }) n->reset();
         }
 
         // filtres dependant des reglages (appele par blocs de 16 echantillons avec des valeurs lissees)
@@ -427,7 +476,7 @@ namespace doorn
             outSub.highpass (sr, 55.0, 0.7);
             outHigh.highShelf (sr, v.highShelfHz, v.highShelfDb + DOORN_HIGH_DB);
             outScoop.peak (sr, DOORN_SCOOP_HZ, DOORN_SCOOP_Q, DOORN_SCOOP_DB);   // creux des mediums de la Thorn
-            outPres.peak (sr, 2900.0, 0.9, v.presenceDb);
+            outPres.peak (sr, 2900.0, 0.9, v.presenceDb * DOORN_PRES_K);
             // v2.1 voix stoner « medium / medium-aigu » (facon Orange / Sunn) : mediums en avant au lieu d'etre creuses
             outMidPush.peak (sr, 900.0, 0.8, DOORN_MIDPUSH_DB);
             outHiMid.peak (sr, 2300.0, 0.9, DOORN_HIMID_DB);
@@ -472,22 +521,37 @@ namespace doorn
                 // etage 1 : gain + rails (pompe de charge ~18 V -> marge, coude doux), biais leger
                 float s = up[i] * g1 + v.bias * 0.25f;
                 s = s * 0.90f;                                   // rails a ~18 V : l'etage 1 reste propre plus longtemps
+#if DOORN_ADAA
+                s = nl1.process (s, 1.6f, 1.6f);
+#else
                 s = (s / std::pow (1.0f + std::pow (std::abs (s), 3.0f), 1.0f / 3.0f)) * 1.6f;
+#endif
                 s = st1lp.lp (s);
                 s = inter.hp (s);                               // liaison entre etages (enleve le biais)
 
                 // etage 2 : gain puis diodes a la masse
                 float t = s * g2 + v.bias * 0.08f;
+#if DOORN_ADAA
+                if (v.extraComp > 0.0f)                         // SDT-2 : etage de compression en plus
+                    t = nlComp.process (t * 1.25f, 1.0f, 1.0f) * 1.5f;
+                t = nl2.process (t, v.vfPos * DOORN_VF_K, v.vfNeg * DOORN_VF_K);
+#else
                 if (v.extraComp > 0.0f)                         // SDT-2 : etage de compression en plus
                     t = std::tanh (t * 1.25f) * 1.5f;
                 const float vf = t >= 0.0f ? v.vfPos : v.vfNeg;
-                t = t / std::pow (1.0f + std::pow (std::abs (t) / vf, v.knee), 1.0f / v.knee);
+                t = t / std::pow (1.0f + std::pow (std::abs (t) / vf, v.knee * DOORN_KNEE_K), 1.0f / (v.knee * DOORN_KNEE_K));
+#endif
                 // v2.0 grain stoner : couche fuzz en parallele (deux ecretages en cascade facon Big Muff, asymetriques :
                 // harmoniques paires, grain « baveux » chaud), filtree en bande (pas de grave qui bave, pas de grésillement)
                 {
                     float fz = fzHP.hp (s) * g2 * 2.2f + 0.12f;
+#if DOORN_ADAA
+                    fz = nlF1.process (fz, 1.0f, 1.0f) - 0.1194f;                 // 1er ecretage (biais -> asymetrie)
+                    fz = nlF2.process (fz * 3.0f + 0.08f, 1.0f, 1.0f) - 0.0798f;   // 2e ecretage
+#else
                     fz = std::tanh (fz) - 0.1194f;                       // 1er ecretage (biais -> asymetrie)
                     fz = std::tanh (fz * 3.0f + 0.08f) - 0.0798f;         // 2e ecretage
+#endif
                     fz = fzLP.lp (fz);
                     // v2.3 : plus de fuzz, un peu moins de distorsion (la couche diodes est attenuee, la fuzz passe devant)
                     t = DOORN_DIST_KEEP * t + DOORN_FUZZ_MIX * v.vfPos * fz;
@@ -503,12 +567,12 @@ namespace doorn
             // ici le grave suit le jeu : plein a l'attaque, il retombe (jusqu a -10 dB) quand la note s'eteint
             {
                 const float rel = ref > 1.0e-6f ? clampf (env / ref, 0.0f, 1.0f) : 1.0f;
-                const float bg = 0.30f + 0.70f * rel;
+                const float bg = 1.0f - DOORN_DYN_BASS * (1.0f - (0.30f + 0.70f * rel));
                 const float lo = bassLP.process (y);
                 y += (bg - 1.0f) * lo;
                 // anti-compression (v1.6) : la sortie suit a nouveau le jeu (attaques devant, notes qui retombent),
                 // comme un ampli qui « respire » ; jusqu'a -9 dB quand la note s'eteint
-                y *= clampf (std::pow (rel + 1.0e-4f, 0.33f), 0.35f, 1.0f);
+                y *= 1.0f - DOORN_DYN_OUT * (1.0f - clampf (std::pow (rel + 1.0e-4f, 0.33f), 0.35f, 1.0f));
             }
             y = outFizz.process (outAir.process (outClar.process (outHiMid.process (outMidPush.process (outPres.process (outHigh.process (outScoop.process (outFat.process (outLowMid.process (outLow.process (outSub.process (y))))))))))));
             for (auto& f : veq) y = f.process (y);
@@ -521,6 +585,7 @@ namespace doorn
         Oversampler4 os;
         Biquad hp, hp2, preBite, preMud, outScoop, outSub, prePeak, preLP, post1, post2, outLow, outHigh, outPres, outLowMid, outFat, outMidPush, outHiMid, eqBass, eqBassPunch, eqMid, eqTreb, eqTrebAir, boostPres, preEdge, outClar, outAir, outFizz, preLP2;
         OnePole dcIn, dcOut, inter, st1lp, fzHP, fzLP;
+        AdaaTanh nl1, nl2, nlComp, nlF1, nlF2;
         Biquad bassLP;
         Biquad veq[8];
         float env = 0.0f, ref = 0.0f, envA = 0.01f, envR = 0.001f, refR = 0.0001f;
@@ -658,7 +723,7 @@ namespace doorn
         bool  gateOpen = true; int gateHold = 0, gateHoldLen = 2880;
         Biquad gateDetHP;
     public:
-        float outTrim = -4.4f;           // calibrage : SDT-1, gain 15 h, level midi ~ niveau d'une guitare DI
+        float outTrim = -3.9f;           // calibrage : SDT-1, gain 15 h, level midi ~ niveau d'une guitare DI
         float lastBoostMix = 0.0f;
 
     private:
