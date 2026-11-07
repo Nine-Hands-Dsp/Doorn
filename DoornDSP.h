@@ -28,6 +28,8 @@
 #include <algorithm>
 #include <cstring>
 
+// v2.15 : LEVEL 10 dB plus bas sur toute sa course (plus de saturation de la sortie dans le DAW au-dela de midi) ;
+//         couche fuzz reduite a ~13 % du son (texture legere), compensee par les diodes : meme niveau, meme equilibre tonal.
 // v2.14 : fin du grésillement sifflant : l'ecretage numerique repliait ses harmoniques au-dela de 96 kHz en sifflement
 //         inharmonique qui suit la note (mesure : -33 a -39 dB sous la note dans l'aigu). Ecreteurs a primitive (ADAA)
 //         en tangente hyperbolique (diodes / transistors, coude naturel, plus doux que l'ancien coude dur) : -52 a -68 dB.
@@ -134,10 +136,10 @@
  #define DOORN_LOWMID_HZ 320.0
 #endif
 #ifndef DOORN_FUZZ_MIX
- #define DOORN_FUZZ_MIX 0.56f
+ #define DOORN_FUZZ_MIX 0.33f     // v2.15 : fuzz legere, juste pour la texture (~13 % du son au lieu de ~46 %)
 #endif
 #ifndef DOORN_DIST_KEEP
- #define DOORN_DIST_KEEP 0.655f
+ #define DOORN_DIST_KEEP 0.90f     // v2.15 : les diodes portent la saturation, meme niveau qu'avant
 #endif
 #ifndef DOORN_FAT_DB
  #define DOORN_FAT_DB 4.0
@@ -631,11 +633,12 @@ namespace doorn
         }
         static float boostDb (float knob) { return 20.0f * clampf (knob / 10.0f, 0.0f, 1.0f); }   // v1.9 : 0 a +20 dB
         static float eqDb (float knob, float range) { return (clampf (knob, 0.0f, 10.0f) - 5.0f) / 5.0f * range; }
-        // LEVEL : 0 = coupe, midi ~ -15 dB, 15 h ~ -7 dB, maxi 0 dB (courbe audio)
+        // LEVEL : 0 = coupe, midi ~ -25 dB, 15 h ~ -17 dB, maxi -10 dB (courbe audio)
+        // v2.15 : course abaissee de 10 dB : avant, la sortie touchait 0 dBFS des 14 h avec une guitare normale
         static float levelDb (float knob)
         {
             const float l = clampf (knob / 10.0f, 0.0f, 1.0f);
-            return l <= 0.0f ? -90.0f : -60.0f + 60.0f * std::pow (l, 0.42f);
+            return l <= 0.0f ? -90.0f : -70.0f + 60.0f * std::pow (l, 0.42f);
         }
 
         // buffers non entrelaces ; in == out autorise
