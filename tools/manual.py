@@ -19,7 +19,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SHOTS = sys.argv[1]
 OUT = sys.argv[2]
-VERSION = "2.16.0"
+VERSION = "2.16.1"
 TMP = os.path.dirname(os.path.abspath(OUT))
 FONTS = os.path.join(ROOT, "assets", "fonts")
 
@@ -246,7 +246,7 @@ T = {
  pre=["Use the arrows of the preset bar, click its name, right-click anywhere, or use the preset menu of your DAW. Right-click &gt; <b>Save user preset</b> stores up to 9 presets of your own."],
  fac_hdr=["PC", "Preset", "Gain / Boost / Level", "Treble / Mids / Bass", "EQ · Mode", "Description"],
  tips_t="9. Tips",
- tips=["In Reaper place Doorn <b>before</b> your amp simulator (for example before Two Notes Genome) with a fairly clean amp, as you would with the real pedal. With a crunch amp, lower the gain: the Stampede already has a lot.",
+ tips=["In Reaper place Doorn <b>before</b> your amp simulator (for example before Ampire, followed by Impulse for the cab) with a fairly clean amp, as you would with the real pedal. With a crunch amp, lower the gain: the Stampede already has a lot.",
        "For low tunings (B standard like Amenra, or a 7-string in G and lower), keep BASS around noon to 1 o'clock and use the BOOST: it tightens the low end without losing weight.",
        "The original reviewer's favourite modes are SDT-1 and Laerm; SDT-2 is perfect for long, saturated chords.",
        "If some hiss remains when you stop playing, set right-click &gt; Noise gate to Strong; for very tight stops on staccato riffs, NGATE from NINE HANDS | DSP can still be added after Doorn."],
@@ -324,7 +324,7 @@ T = {
  pre=["Utilisez les flèches de la barre de presets, cliquez sur son nom, faites un clic droit n'importe où, ou passez par le menu de presets de votre DAW. Clic droit &gt; <b>Save user preset</b> enregistre jusqu'à 9 presets personnels."],
  fac_hdr=["PC", "Preset", "Gain / Boost / Level", "Treble / Mids / Bass", "EQ · Mode", "Description"],
  tips_t="9. Conseils d'utilisation",
- tips=["Dans Reaper, placez Doorn <b>avant</b> votre simulateur d'ampli (par exemple avant Two Notes Genome) avec un ampli assez clair, comme avec la vraie pédale. Avec un ampli crunch, baissez le gain : la Stampede en a déjà beaucoup.",
+ tips=["Dans Reaper, placez Doorn <b>avant</b> votre simulateur d'ampli (par exemple avant Ampire, suivi d'Impulse pour le baffle) avec un ampli assez clair, comme avec la vraie pédale. Avec un ampli crunch, baissez le gain : la Stampede en a déjà beaucoup.",
        "Pour les accordages bas (Si standard comme Amenra, ou une 7 cordes en Sol et plus bas), gardez BASS entre midi et 13 h et servez-vous du BOOST : il resserre le grave sans perdre de poids.",
        "Les modes préférés du testeur d'origine sont SDT-1 et Laerm ; SDT-2 est parfait pour les longs accords saturés.",
        "S'il reste du souffle quand vous arrêtez de jouer, passez clic droit &gt; Noise gate sur Strong ; pour des arrêts très secs sur les riffs saccadés, NGATE de NINE HANDS | DSP peut toujours être ajouté après Doorn."],
