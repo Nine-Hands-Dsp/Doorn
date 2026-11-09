@@ -5,6 +5,13 @@ Distorsion high gain au format pédale simple (référence de format : Echoflex)
 **Providence Stampede SDT-1**. *Doorn* veut dire « épine » en néerlandais.
 Usage personnel. Windows 11 et macOS (binaire universel).
 
+<p align="center">
+  <a href="https://github.com/Nine-Hands-Dsp/Doorn/releases/latest/download/Doorn-VST3-Windows.zip"><img alt="Télécharger pour Windows" src="https://img.shields.io/badge/%E2%AC%87%20T%C3%A9l%C3%A9charger-Windows-0078D6?style=for-the-badge"></a>
+  <a href="https://github.com/Nine-Hands-Dsp/Doorn/releases/latest/download/Doorn-VST3-macOS.zip"><img alt="Télécharger pour macOS" src="https://img.shields.io/badge/%E2%AC%87%20T%C3%A9l%C3%A9charger-macOS-111111?style=for-the-badge&logo=apple&logoColor=white"></a>
+  <br>
+  <a href="https://github.com/Nine-Hands-Dsp/Doorn/releases/latest"><img alt="Dernière version" src="https://img.shields.io/github/v/release/Nine-Hands-Dsp/Doorn?label=derni%C3%A8re%20version&color=919496"></a>
+</p>
+
 ## Installation via GitHub
 
 1. Le push sur `main` lance la compilation (onglet **Actions**) : Windows (`windows-2022`) et macOS.
