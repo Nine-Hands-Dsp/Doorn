@@ -18,7 +18,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SHOTS = sys.argv[1] if len(sys.argv) > 2 else None
 OUT = sys.argv[-1]
-VERSION = "3.0.0"
+VERSION = "3.1.0"
 TMP = os.path.dirname(os.path.abspath(OUT))
 FONTS = os.path.join(ROOT, "assets", "fonts")
 
@@ -63,8 +63,8 @@ if SHOTS:
     leds_img = strip([crop_u(base, box_led), crop_u(src, box_led), crop_u(src, box_bst), crop_u(shot("doorn_boost.png"), box_bst)],
                      os.path.join(TMP, "doorn_leds.png"))
     bar = Image.new("RGB", (int(290 * k), int(150 * k)), (255, 255, 255))
-    bar.paste(crop_u(base, (96, 578, 386, 625)), (0, 0)); bar.paste(crop_u(src, (96, 570, 386, 633)), (0, int(56 * k)))
-    bar = bar.crop((0, 0, bar.width, int(56 * k) + int(63 * k)))
+    bar.paste(crop_u(base, (96, 578, 386, 625)), (0, 0)); bar.paste(crop_u(src, (96, 578, 386, 625)), (0, int(56 * k)))
+    bar = bar.crop((0, 0, bar.width, int(56 * k) + int(47 * k)))
     bar_img = os.path.join(TMP, "doorn_bar.png"); bar.save(bar_img)
 
     # ---------- couverture : pedale detouree avec le canal alpha du fond (boitier + jacks), reflet au sol, halo sable tres doux ----------
@@ -177,7 +177,7 @@ T = dict(
    ["6", "BASS", "Plateau à 90 Hz et bosse de punch vers 120 Hz, -15 / +18 dB, plat à midi."],
    ["7", "Inverseur EQ", "En haut = off (EQ retiré du circuit), en bas = on."],
    ["8", "Inverseur de mode", "En haut = SDT-2, au centre = Laerm, en bas = SDT-1."],
-   ["9", "Écran", "Preset en cours ; flèches = preset usine précédent / suivant, clic sur le nom = menu des presets. Le réglage que vous bougez s'affiche dans une bulle par-dessus."],
+   ["9", "Écran", "Barre de presets au repos (flèches = preset usine précédent / suivant, clic sur le nom = menu des presets) ; ligne d'état à la même place pendant les réglages."],
    ["10", "LED", "Blanche = effet actif, éteinte = bypass."],
    ["11", "Footswitch BOOST", "Boost on / off (appui maintenu = momentané)."],
    ["12", "Footswitch BYPASS", "Effet on / off (appui maintenu = momentané)."],
@@ -208,7 +208,7 @@ T = dict(
        ["Footswitch Boost", "Footswitch, à accrochage (127 = on / 0 = off) ou momentané (bascule à chaque appui)"],
        ["Bypass", "Footswitch, à accrochage ou momentané (même réglage)"]],
  learn_h="MIDI Learn",
- learn=["<b>Clic droit sur une commande</b> (potard, inverseur ou footswitch) : le menu s'ouvre là où vous cliquez, avec en en-tête le nom de la commande et son assignation (<i>MIDI: CC 64</i> ou <i>MIDI: not assigned</i>). Choisissez <b>MIDI Learn: &lt;nom&gt;</b>, puis bougez la pédale d'expression ou appuyez sur le bouton MIDI à utiliser. Pendant l'attente, la bulle affiche <b>MIDI LEARN: move a control for Gain</b> ; le premier CC reçu est affecté à la commande (il ne change pas le son) et la bulle le confirme pendant 2 secondes, par ex. <b>Gain = CC 64</b>.",
+ learn=["<b>Clic droit sur une commande</b> (potard, inverseur ou footswitch) : le menu s'ouvre là où vous cliquez, avec en en-tête le nom de la commande et son assignation (<i>MIDI: CC 64</i> ou <i>MIDI: not assigned</i>). Choisissez <b>MIDI Learn: &lt;nom&gt;</b>, puis bougez la pédale d'expression ou appuyez sur le bouton MIDI à utiliser. Pendant l'attente, l'écran affiche <b>MIDI LEARN · Gain</b> ; le premier CC reçu est affecté à la commande (il ne change pas le son) et l'écran le confirme pendant 2 secondes, par ex. <b>Gain = CC 64</b>.",
         "Si ce numéro de CC servait déjà à une autre commande, celle-ci est désassignée : un même CC ne pilote jamais deux commandes par erreur. <b>Clear MIDI: &lt;nom&gt;</b> retire l'assignation de la commande ; <b>Cancel MIDI learn</b> (affiché pendant l'attente) annule l'apprentissage sans rien changer.",
         "<b>Clic droit ailleurs &gt; MIDI</b> : la liste des dix commandes avec leur CC actuel (<b>Learn: Gain (not assigned)</b> tant qu'elle n'est pas assignée, <b>Learn: Gain (CC 64)</b> une fois apprise ; en choisir une lance son apprentissage), <b>Cancel MIDI learn</b> et <b>Clear all MIDI assignments</b>.",
         "Les assignations sont <b>sauvegardées avec le projet</b> (et avec le preset du DAW). Les CC 0 à 119 peuvent être appris (120 à 127 sont des messages de mode de canal)."],
@@ -218,8 +218,8 @@ T = dict(
             "<b>Program Change 1 à 13</b> : rappel des presets usine. Tous les paramètres sont aussi automatisables dans le DAW."],
  win_t="7. Fenêtre et écran",
  win=["Doorn utilise le format pédale simple de NINE HANDS | DSP : la fenêtre montre la pédale seule, s'ouvre à sa taille par défaut et ne peut jamais être réduite en dessous. Clic droit &gt; <b>Plugin size</b> : <b>60 %</b>, <b>75 %</b> ou <b>100 %</b> redimensionne cette fenêtre, <b>(default)</b> étant indiqué à côté de la taille par défaut. En bas du même menu, <b>Default size (new windows)</b> choisit la taille d'ouverture de toutes les nouvelles fenêtres de Doorn (réglage commun à toutes les instances, enregistré sur l'ordinateur) ; la fenêtre ouverte prend aussitôt cette taille. Vous pouvez aussi tirer le coin en bas à droite pour l'agrandir jusqu'à 150 % (les proportions sont conservées). Les menus clic droit s'ouvrent toujours là où vous cliquez.",
-      "L'<b>écran</b> affiche en permanence le preset en cours (ou <i>Edited</i> dès qu'un réglage change) et l'état du bypass. Quand vous bougez un potard, un inverseur ou un footswitch, son réglage s'affiche en grands caractères dans une <b>bulle</b> par-dessus l'écran (potards en %, par ex. <i>gain 76 %</i>, <i>eq off</i>, <i>laerm</i>, <i>boost on</i>), puis elle s'efface au bout de 2,5 s. La bulle affiche aussi les messages du MIDI Learn."],
- bar_cap="L'écran de presets, puis la bulle qui affiche le réglage que vous bougez.",
+      "L'<b>écran</b> réunit la barre de presets et la ligne d'état. Au repos, il montre la <b>barre de presets</b> : le preset en cours (ou <i>Edited</i> dès qu'un réglage change) et l'état du bypass, entre les deux flèches. Dès qu'un réglage bouge (souris, molette, automation, MIDI, footswitch), la <b>ligne d'état</b> prend sa place, dans la même police et à la même taille : le réglage de la commande en direct (potards en %, par ex. <i>gain 76 %</i>, <i>eq off</i>, <i>laerm</i>, <i>boost on</i>) et les messages du MIDI Learn. Elle reste 2,5 s après le dernier mouvement, puis la barre de presets revient en fondu. Un clic sur l'écran pendant qu'elle est affichée fait revenir la barre de presets aussitôt (et le clic agit : flèche ou menu)."],
+ bar_cap="L'écran : barre de presets au repos, puis ligne d'état pendant un réglage.",
  pre_t="8. Presets",
  pre=["Utilisez les flèches de l'écran, cliquez sur le nom du preset, faites un clic droit n'importe où, ou passez par le menu de presets de votre DAW. Clic droit &gt; <b>Save user preset</b> enregistre jusqu'à 9 presets personnels (<b>Load user preset</b> pour les rappeler)."],
  fac_hdr=["PC", "Preset", "Gain / Boost / Level", "Treble / Mids / Bass", "EQ · Mode", "Description"],
@@ -262,7 +262,7 @@ def story():
     wt = Table([[[P(t["win"][1])], [img(bar_img, 64 * mm), P(t["bar_cap"], "small")]]], colWidths=[W - 68 * mm, 68 * mm])
     wt.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (0, 0), 0)]))
     f.append(wt)
-    f.append(CondPageBreak(150 * mm))
+    f.append(CondPageBreak(60 * mm))
     f.append(P(t["pre_t"], "h1")); f += [P(x) for x in t["pre"]]
     rows = [t["fac_hdr"]]
     for i, (n, g, b, l, tr, mi, ba, eq, mo, bo) in enumerate(FACTORY):

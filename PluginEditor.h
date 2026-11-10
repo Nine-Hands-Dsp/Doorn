@@ -134,7 +134,6 @@ private:
     juce::String buildPresetLine() const;
     void drawLed (juce::Graphics&);
     void drawScreen (juce::Graphics&);
-    void drawStatus (juce::Graphics&);
 
     DoornAudioProcessor& proc;
     KnobImages knobImg;

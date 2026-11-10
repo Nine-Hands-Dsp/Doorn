@@ -8,8 +8,8 @@ namespace
 {
     // Repere : image du design v017 (965 x 1800 px) / 2, positions generees dans Layout.h depuis gui/manifest.json
     const Rectangle<float> screenRect = layout::screenRect;
-    // ligne d'etat : bulle temporaire centree sur l'ecran de presets (plus grande que l'ecran, lisible a 60 %)
-    const Rectangle<float> statusRect = Rectangle<float> (300.0f, 50.0f).withCentre (layout::screenRect.getCentre());
+    // barre de presets et ligne d'etat au meme endroit (regle NINE HANDS | DSP, validee sur Echoflex v2) :
+    // une seule pastille, l'ecran du design ; la ligne d'etat y remplace le preset le temps des reglages
     const float arrowZone = 30.0f;     // zones cliquables des fleches de l'ecran (largeur en unites)
 
     // rotation des potards (manifest) : valeur 0 -> -135 degres, 0,5 -> fleche en haut, 1 -> +135 degres
@@ -17,7 +17,7 @@ namespace
     const float rotEnd   = MathConstants<float>::pi * 2.75f;
 
     const Colour inkWhite (0xffe9e7e2);          // texte de l'ecran
-    const Colour screenFace (0xff151516), screenEdge (0xff4b4b50);
+    const Colour screenFace (0xff1c1c1d);       // face de l'ecran du design (mesuree dans le fond)
     const Colour menuAccent (0xffcdb995);        // pastille des en-tetes de menu (sable des fissures)
 
     const char* const valueIds[] = { "gain", "boost", "level", "treble", "mids", "bass", "eq", "mode", "boostOn", "active", "gate" };
@@ -504,7 +504,7 @@ void DoornAudioProcessorEditor::timerCallback()
     }
     else if (lt >= 0)
     {
-        learnLine = "MIDI LEARN: move a control for " + String (DoornAudioProcessor::learnDef (lt).name);
+        learnLine = String (CharPointer_UTF8 ("MIDI LEARN \xc2\xb7 ")) + DoornAudioProcessor::learnDef (lt).name;
         learnLineUntil = now + 200.0;
         statusUntil = jmax (statusUntil, now + 200.0);
     }
@@ -513,10 +513,10 @@ void DoornAudioProcessorEditor::timerCallback()
     if (mc != lastMidiCount) { lastMidiCount = mc; midiFlash = 8; }
     if (midiFlash > 0) --midiFlash;
 
+    // fondu croise court : ~120 ms a l'apparition de la ligne d'etat, ~300 ms au retour de la barre de presets
     const float target = now < statusUntil ? 1.0f : 0.0f;
-    statusAlpha += (target - statusAlpha) * (target > statusAlpha ? 0.45f : 0.12f);
-    if (statusAlpha < 0.005f) statusAlpha = 0.0f;
-    if (statusAlpha > 0.995f) statusAlpha = 1.0f;
+    if (target > statusAlpha) statusAlpha = jmin (1.0f, statusAlpha + 0.28f);
+    else if (target < statusAlpha) statusAlpha = jmax (0.0f, statusAlpha - 0.11f);
 
     // clic droit > Lights : nouveau reglage -> on redessine les halos
     const int lg = jlimit (0, 2, roundToInt (proc.raw ("ledGlow"))), bg = jlimit (0, 2, roundToInt (proc.raw ("boostGlow")));
@@ -557,7 +557,7 @@ void DoornAudioProcessorEditor::timerCallback()
     if (std::abs (statusAlpha - drawnStatus) > 0.003f || (statusAlpha > 0.0f && textChanged))
     {
         drawnStatus = statusAlpha;
-        askRepaint (scaled (statusRect.expanded (4.0f)));
+        askRepaint (scaled (screenRect.expanded (3.0f)));
     }
     if (pl != lastPreset || hoverZone != drawnHover || midiFlash > 0)
     {
@@ -592,43 +592,40 @@ void DoornAudioProcessorEditor::drawLed (Graphics& g)
 
 void DoornAudioProcessorEditor::drawScreen (Graphics& g)
 {
-    // fleches de l'ecran (dessinees dans le fond) : plus claires au survol
-    auto arrow = [&] (Point<float> c, bool left)
+    // une seule pastille (l'ecran du design) : barre de presets au repos, ligne d'etat pendant les reglages,
+    // en fondu croise, meme police et meme taille, sans saut de position
+    const float a = statusAlpha;
+    const float pa = 1.0f - a;                  // opacite de la barre de presets
+
+    // fleches (dessinees dans le fond) : plus claires au survol, effacees pendant la ligne d'etat
+    auto arrow = [&] (Point<float> c, bool left, bool hot)
     {
-        Path p;
         const float s = 4.6f;
+        g.setColour (screenFace.withAlpha (jmax (a, hot ? pa : 0.0f)));
+        g.fillEllipse (Rectangle<float> (s * 3.2f, s * 3.2f).withCentre (c));
+        if (! hot || pa <= 0.0f) return;
+        Path p;
         if (left) p.addTriangle (c.x + s * 0.55f, c.y - s, c.x + s * 0.55f, c.y + s, c.x - s * 0.75f, c.y);
         else      p.addTriangle (c.x - s * 0.55f, c.y - s, c.x - s * 0.55f, c.y + s, c.x + s * 0.75f, c.y);
-        g.setColour (screenFace);
-        g.fillEllipse (Rectangle<float> (s * 3.2f, s * 3.2f).withCentre (c));
-        g.setColour (Colours::white);
+        g.setColour (Colours::white.withAlpha (pa));
         g.fillPath (p);
     };
-    if (hoverZone == 1) arrow (layout::arrowLeft, true);
-    if (hoverZone == 3) arrow (layout::arrowRight, false);
+    arrow (layout::arrowLeft, true, hoverZone == 1);
+    arrow (layout::arrowRight, false, hoverZone == 3);
 
-    const auto r = screenRect.reduced (arrowZone, 0.0f);
-    g.setFont (Font (FontOptions (labelFace).withHeight (15.5f)));
-    g.setColour ((midiFlash > 0 ? Colour (0xffffd9a0) : inkWhite).withAlpha (hoverZone == 2 ? 1.0f : 0.90f));
-    g.drawFittedText (lastPreset, r.toNearestInt(), Justification::centred, 1, 0.7f);
-}
-
-void DoornAudioProcessorEditor::drawStatus (Graphics& g)
-{
-    const float a = statusAlpha;
-    if (a <= 0.0f) return;
-    // bulle de la ligne d'etat : meme matiere que l'ecran de presets, plus grande pour rester lisible a 60 %
-    g.setColour (Colours::black.withAlpha (0.35f * a));
-    g.fillRoundedRectangle (statusRect.translated (1.5f, 2.5f), statusRect.getHeight() * 0.5f);
-    g.setColour (screenFace.withAlpha (0.97f * a));
-    g.fillRoundedRectangle (statusRect, statusRect.getHeight() * 0.5f);
-    g.setColour (screenEdge.withAlpha (a));
-    g.drawRoundedRectangle (statusRect.reduced (1.0f), statusRect.getHeight() * 0.5f - 1.0f, 1.6f);
-
-    const bool longLine = lastLine1.length() > 18;
-    g.setFont (Font (FontOptions (labelFace).withHeight (longLine ? 17.0f : 30.0f)));
-    g.setColour (inkWhite.withAlpha (a));
-    g.drawFittedText (lastLine1, statusRect.reduced (18.0f, 0.0f).toNearestInt(), Justification::centred, longLine ? 2 : 1, 0.75f);
+    const Font f (FontOptions (labelFace).withHeight (15.5f));
+    g.setFont (f);
+    if (pa > 0.0f)
+    {
+        g.setColour ((midiFlash > 0 ? Colour (0xffffd9a0) : inkWhite).withAlpha ((hoverZone == 2 ? 1.0f : 0.90f) * pa));
+        g.drawFittedText (lastPreset, screenRect.reduced (arrowZone, 0.0f).toNearestInt(), Justification::centred, 1, 0.7f);
+    }
+    if (a > 0.0f)
+    {
+        // ligne d'etat : toute la largeur de la pastille (les fleches sont effacees), une ligne
+        g.setColour (inkWhite.withAlpha (a));
+        g.drawFittedText (lastLine1, screenRect.reduced (14.0f, 0.0f).toNearestInt(), Justification::centred, 1, 0.6f);
+    }
 }
 
 void DoornAudioProcessorEditor::paint (Graphics& g)
@@ -648,7 +645,6 @@ void DoornAudioProcessorEditor::paint (Graphics& g)
     drawGlow (g, boostGlow, boostGlow, layout::boostGlowRect, boostGlowLvl, boostLit);
     drawLed (g);
     drawScreen (g);
-    drawStatus (g);
 }
 
 //==============================================================================
@@ -673,7 +669,14 @@ void DoornAudioProcessorEditor::mouseExit (const MouseEvent&) { hoverZone = 0; }
 void DoornAudioProcessorEditor::mouseDown (const MouseEvent& e)
 {
     if (e.mods.isPopupMenu()) { showContextMenu(); return; }
-    switch (presetZoneAt (e.position / unitScale()))
+    const int zone = presetZoneAt (e.position / unitScale());
+    if (zone != 0 && statusAlpha > 0.0f)
+    {
+        // la ligne d'etat ne bloque pas les clics : la barre de presets revient et le clic agit
+        statusUntil = 0.0; learnLineUntil = 0.0; statusAlpha = 0.0f;
+        askRepaint (scaled (screenRect.expanded (3.0f)));
+    }
+    switch (zone)
     {
         case 1: stepPreset (-1); break;
         case 2: showPresetMenu(); break;
