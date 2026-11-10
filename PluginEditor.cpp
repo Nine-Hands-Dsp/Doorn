@@ -7,10 +7,13 @@ using namespace juce;
 namespace
 {
     // Repere : image du design v017 (965 x 1800 px) / 2, positions generees dans Layout.h depuis gui/manifest.json
-    const Rectangle<float> screenRect = layout::screenRect;
+    // Barre de presets / ligne d'etat de reference NINE HANDS | DSP (celle de Strong Pickle v1.5.3) :
+    // pastille 400 x 38 unites (800 x 76 px dans l'image de 1800 px), Poppins Medium 23 (46 px), centree sur l'ecran du design
+    const float barH = 38.0f, barW = 400.0f, barFont = 23.0f, arrowSize = 5.5f;
+    const Rectangle<float> screenRect = Rectangle<float> (barW, barH).withCentre (layout::screenRect.getCentre());
     // barre de presets et ligne d'etat au meme endroit (regle NINE HANDS | DSP, validee sur Echoflex v2) :
     // une seule pastille, l'ecran du design ; la ligne d'etat y remplace le preset le temps des reglages
-    const float arrowZone = 30.0f;     // zones cliquables des fleches de l'ecran (largeur en unites)
+    const float arrowZone = 34.0f;     // zones cliquables des fleches de l'ecran (largeur en unites)
 
     // rotation des potards (manifest) : valeur 0 -> -135 degres, 0,5 -> fleche en haut, 1 -> +135 degres
     const float rotStart = MathConstants<float>::pi * 1.25f;
@@ -592,39 +595,39 @@ void DoornAudioProcessorEditor::drawLed (Graphics& g)
 
 void DoornAudioProcessorEditor::drawScreen (Graphics& g)
 {
-    // une seule pastille (l'ecran du design) : barre de presets au repos, ligne d'etat pendant les reglages,
-    // en fondu croise, meme police et meme taille, sans saut de position
-    const float a = statusAlpha;
-    const float pa = 1.0f - a;                  // opacite de la barre de presets
+    // une seule pastille, a la taille de reference (Strong Pickle), avec la matiere de l'ecran du design :
+    // fin contour sombre, liseré gris clair de 1 px, face noire ; barre de presets au repos, ligne d'etat pendant
+    // les reglages, en fondu croise, meme police et meme taille
+    const auto r = screenRect;
+    const float rad = r.getHeight() * 0.5f;
+    g.setColour (Colour (0xff151516));
+    g.fillRoundedRectangle (r.expanded (0.6f), rad + 0.6f);
+    g.setColour (Colour (0xff6f6f71).withAlpha (hoverZone != 0 && statusAlpha <= 0.0f ? 1.0f : 0.85f));
+    g.fillRoundedRectangle (r, rad);
+    g.setColour (screenFace);
+    g.fillRoundedRectangle (r.reduced (0.6f), rad - 0.6f);
 
-    // fleches (dessinees dans le fond) : plus claires au survol, effacees pendant la ligne d'etat
-    auto arrow = [&] (Point<float> c, bool left, bool hot)
-    {
-        const float s = 4.6f;
-        g.setColour (screenFace.withAlpha (jmax (a, hot ? pa : 0.0f)));
-        g.fillEllipse (Rectangle<float> (s * 3.2f, s * 3.2f).withCentre (c));
-        if (! hot || pa <= 0.0f) return;
-        Path p;
-        if (left) p.addTriangle (c.x + s * 0.55f, c.y - s, c.x + s * 0.55f, c.y + s, c.x - s * 0.75f, c.y);
-        else      p.addTriangle (c.x - s * 0.55f, c.y - s, c.x - s * 0.55f, c.y + s, c.x + s * 0.75f, c.y);
-        g.setColour (Colours::white.withAlpha (pa));
-        g.fillPath (p);
-    };
-    arrow (layout::arrowLeft, true, hoverZone == 1);
-    arrow (layout::arrowRight, false, hoverZone == 3);
-
-    const Font f (FontOptions (labelFace).withHeight (15.5f));
-    g.setFont (f);
+    const float a = statusAlpha, pa = 1.0f - a;
+    g.setFont (Font (FontOptions (labelFace).withHeight (barFont)));
     if (pa > 0.0f)
     {
-        g.setColour ((midiFlash > 0 ? Colour (0xffffd9a0) : inkWhite).withAlpha ((hoverZone == 2 ? 1.0f : 0.90f) * pa));
-        g.drawFittedText (lastPreset, screenRect.reduced (arrowZone, 0.0f).toNearestInt(), Justification::centred, 1, 0.7f);
+        auto arrow = [&] (Rectangle<float> ar, bool left, bool hot)
+        {
+            Path p; const auto c = ar.getCentre(); const float sz = arrowSize;
+            if (left) p.addTriangle (c.x + sz * 0.6f, c.y - sz, c.x + sz * 0.6f, c.y + sz, c.x - sz * 0.8f, c.y);
+            else      p.addTriangle (c.x - sz * 0.6f, c.y - sz, c.x - sz * 0.6f, c.y + sz, c.x + sz * 0.8f, c.y);
+            g.setColour (inkWhite.withAlpha ((hot ? 1.0f : 0.6f) * pa));
+            g.fillPath (p);
+        };
+        arrow (r.withWidth (arrowZone), true, hoverZone == 1);
+        arrow (r.withTrimmedLeft (r.getWidth() - arrowZone), false, hoverZone == 3);
+        g.setColour ((midiFlash > 0 ? Colour (0xffffd9a0) : inkWhite).withAlpha ((hoverZone == 2 ? 1.0f : 0.92f) * pa));
+        g.drawFittedText (lastPreset, r.reduced (arrowZone, 0.0f).toNearestInt(), Justification::centred, 1, 0.7f);
     }
     if (a > 0.0f)
     {
-        // ligne d'etat : toute la largeur de la pastille (les fleches sont effacees), une ligne
         g.setColour (inkWhite.withAlpha (a));
-        g.drawFittedText (lastLine1, screenRect.reduced (14.0f, 0.0f).toNearestInt(), Justification::centred, 1, 0.6f);
+        g.drawFittedText (lastLine1, r.reduced (rad, 0.0f).toNearestInt(), Justification::centred, 1, 0.6f);
     }
 }
 

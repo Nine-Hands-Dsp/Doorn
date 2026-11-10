@@ -18,7 +18,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SHOTS = sys.argv[1] if len(sys.argv) > 2 else None
 OUT = sys.argv[-1]
-VERSION = "3.1.0"
+VERSION = "3.2.0"
 TMP = os.path.dirname(os.path.abspath(OUT))
 FONTS = os.path.join(ROOT, "assets", "fonts")
 
@@ -40,7 +40,7 @@ if SHOTS:
     # ---------- capture annotee (sans la bulle de la ligne d'etat) ----------
     base = shot("doorn_bypass.png")
     marks = [(1, 40, 95), (2, 280, 102), (3, 442, 95), (4, 40, 288), (5, 190, 288), (6, 442, 288),
-             (7, 40, 470), (8, 442, 470), (9, 96, 601.5), (10, 200, 662), (11, 36, 735), (12, 448, 735), (13, 88, 40), (14, 395, 40)]
+             (7, 40, 470), (8, 442, 470), (9, 24, 601.5), (10, 200, 662), (11, 36, 735), (12, 448, 735), (13, 88, 40), (14, 395, 40)]
     ann = base.copy(); dr = ImageDraw.Draw(ann)
     fnt = ImageFont.truetype(os.path.join(FONTS, "Poppins-Bold.ttf"), 30)
     for n, x, y in marks:
@@ -62,9 +62,9 @@ if SHOTS:
     box_led, box_bst = (186, 612, 296, 712), (176, 72, 306, 192)
     leds_img = strip([crop_u(base, box_led), crop_u(src, box_led), crop_u(src, box_bst), crop_u(shot("doorn_boost.png"), box_bst)],
                      os.path.join(TMP, "doorn_leds.png"))
-    bar = Image.new("RGB", (int(290 * k), int(150 * k)), (255, 255, 255))
-    bar.paste(crop_u(base, (96, 578, 386, 625)), (0, 0)); bar.paste(crop_u(src, (96, 578, 386, 625)), (0, int(56 * k)))
-    bar = bar.crop((0, 0, bar.width, int(56 * k) + int(47 * k)))
+    bar = Image.new("RGB", (int(410 * k), int(150 * k)), (255, 255, 255))
+    bar.paste(crop_u(base, (36, 576, 446, 627)), (0, 0)); bar.paste(crop_u(src, (36, 576, 446, 627)), (0, int(56 * k)))
+    bar = bar.crop((0, 0, bar.width, int(56 * k) + int(51 * k)))
     bar_img = os.path.join(TMP, "doorn_bar.png"); bar.save(bar_img)
 
     # ---------- couverture : pedale detouree avec le canal alpha du fond (boitier + jacks), reflet au sol, halo sable tres doux ----------
