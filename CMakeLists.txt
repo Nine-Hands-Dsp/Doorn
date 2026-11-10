@@ -6,7 +6,7 @@ if(APPLE)
   set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "" FORCE)
 endif()
 
-project(Doorn VERSION 2.16.1)
+project(Doorn VERSION 3.0.0)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -26,9 +26,29 @@ else()
   FetchContent_MakeAvailable(JUCE)
 endif()
 
-# visuel integre au plugin (aucun fichier externe a l'execution)
+# visuel integre au plugin (aucun fichier externe a l'execution) : design v017 de l'utilisateur (gui/)
 juce_add_binary_data(DoornAssets SOURCES
-  background.jpg toggle_strip.png glow_red.png Poppins-Medium.ttf)
+  gui/Doorn_Background.png
+  gui/knob_center_fixed_190px.png
+  gui/knob_rotating_crown_and_arrow_190px.png
+  gui/knob_reflect_static_190px.png
+  gui/boost_center_off_100px.png
+  gui/boost_rotating_off_100px.png
+  gui/boost_center_on_100px.png
+  gui/boost_rotating_on_100px.png
+  gui/boost_reflect_static_100px.png
+  gui/boost_glow_on.png
+  gui/led_off.png
+  gui/led_on.png
+  gui/switch_left_up.png
+  gui/switch_left_mid.png
+  gui/switch_left_down.png
+  gui/switch_right_up.png
+  gui/switch_right_mid.png
+  gui/switch_right_down.png
+  Poppins-Regular.ttf
+  Poppins-Medium.ttf
+  Poppins-Bold.ttf)
 set_target_properties(DoornAssets PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 juce_add_plugin(Doorn
@@ -39,7 +59,7 @@ juce_add_plugin(Doorn
   FORMATS VST3
   VST3_CATEGORIES Fx Distortion
   PRODUCT_NAME "Doorn"
-  VERSION 2.16.1
+  VERSION 3.0.0
   DESCRIPTION "High gain distortion (Thorn / Stampede SDT-1 style) - single pedal format"
   IS_SYNTH FALSE
   NEEDS_MIDI_INPUT TRUE

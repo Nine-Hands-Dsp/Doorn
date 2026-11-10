@@ -1,6 +1,6 @@
 # Doorn (NINE HANDS | DSP) — VST3
 
-Distorsion high gain au format pédale simple (référence de format : Echoflex), reproduction de la
+Distorsion high gain au format pédale simple, reproduction de la
 **Lichtlaerm Audio Thorn**, la pédale signature de Lennart Bossu (Amenra), elle-même rétro-conçue à partir de la
 **Providence Stampede SDT-1**. *Doorn* veut dire « épine » en néerlandais.
 Usage personnel. Windows 11 et macOS (binaire universel).
@@ -11,17 +11,17 @@ Usage personnel. Windows 11 et macOS (binaire universel).
   <br>
   <a href="https://github.com/Nine-Hands-Dsp/Doorn/releases/latest/download/Doorn-Notice.pdf"><img alt="Télécharger la notice (PDF)" src="https://img.shields.io/badge/%F0%9F%93%96%20Notice-PDF-919496?style=for-the-badge"></a>
   <br>
-  <a href="https://github.com/Nine-Hands-Dsp/Doorn/releases/latest"><img alt="Dernière version" src="https://img.shields.io/github/v/release/Nine-Hands-Dsp/Doorn?label=derni%C3%A8re%20version&color=919496"></a>
+  <a href="https://github.com/Nine-Hands-Dsp/Doorn/releases/latest"><img alt="Dernière version" src="https://img.shields.io/github/v/release/Nine-Hands-Dsp/Doorn?label=derni%C3%A8re%20version&color=b8a37a"></a>
 </p>
 
-## Installation via GitHub
+## Installation
 
-1. Le push sur `main` lance la compilation (onglet **Actions**) : Windows (`windows-2022`) et macOS.
-2. Télécharger l'artefact :
-   - **Windows** : copier `Doorn.vst3` dans `C:\Program Files\Common Files\VST3\`
-   - **macOS** : dézipper puis copier `Doorn.vst3` dans `~/Library/Audio/Plug-Ins/VST3/`
-     (premier lancement : `xattr -cr ~/Library/Audio/Plug-Ins/VST3/Doorn.vst3` si macOS le bloque)
-3. Relancer l'analyse des plugins. Le plugin apparaît comme **Doorn (NINE HANDS | DSP)**.
+Les boutons ci-dessus téléchargent toujours la **dernière version** (Release GitHub publiée à chaque build de `main`).
+
+- **Windows** : dézipper `Doorn-VST3-Windows.zip` et copier `Doorn.vst3` dans `C:\Program Files\Common Files\VST3\`
+- **macOS** : dézipper `Doorn-VST3-macOS.zip` et copier `Doorn.vst3` dans `~/Library/Audio/Plug-Ins/VST3/`
+  (premier lancement : `xattr -cr ~/Library/Audio/Plug-Ins/VST3/Doorn.vst3` si macOS le bloque)
+- Relancer l'analyse des plugins. Le plugin apparaît comme **Doorn (NINE HANDS | DSP)** ; les projets existants le retrouvent avec tous leurs réglages.
 
 ## La pédale d'origine et le plugin
 
@@ -38,23 +38,23 @@ Usage personnel. Windows 11 et macOS (binaire universel).
 | Footswitch BYPASS | Relais « Smart Relay » | Clic = on / off ; **appui maintenu** (> 0,45 s) quand l'effet était coupé = fonctionnement momentané (désactivable, clic droit > Settings) |
 | Footswitch BOOST | Boost on / off | Même comportement que BYPASS |
 | Noise gate (ajout Doorn) | — (la Thorn est bruyante à fort gain) | Clic droit > *Noise gate* : Off / Light / Medium (défaut) / Strong. Détection sur l'entrée, en avance de 32 échantillons sur le signal traité (attaques intactes), hystérésis 6 dB, maintien 60 ms, fermeture douce 120 ms ; n'agit que sur l'effet. Souffle de −80 dBFS en entrée : −9 dBFS en sortie sans gate, silence avec |
-| LED | Une seule LED entre les footswitchs | Rouge = effet actif ; la façade s'éclaire autour. Boost engagé : le potard BOOST transparent s'éclaire de l'intérieur et son curseur devient visible |
+| LED | Une seule LED entre les footswitchs ; le potard BOOST translucide s'allume avec le boost | v3.0 : LED blanche = effet actif ; potard BOOST en verre dépoli blanc qui s'allume (avec halo) quand le boost est enclenché. Halos réglables : clic droit > *Lights* (LED glow / Boost knob glow : Low, Medium, High) |
 
 Sources : fiche Lichtlaerm Audio (lichtlaermaudio.com/shop/thorn), test Guitar Pedal X, Effects Database,
 manuel Providence SDT-2, tests MusicRadar / Vintage Guitar de la Stampede DT, Premier Guitar (Rig Rundown Amenra,
 Kurt Ballou), guide de montage GCI Brutalist Jr (clone de la SDT-1), photo du circuit imprimé de la Thorn
 (LT1054 = pompe de charge, ATtiny85 + 2 relais Omron G6K = Smart Relay).
 
-## Interface
+## Interface (v3.0 : design v017)
 
-- Fenêtre ouverte à **493 px de haut** (391 × 493), impossible de la réduire en dessous, proportions bloquées, jusqu'à 150 % (mêmes réglages qu'Echoflex). Clic droit > *Plugin size* : 60 % / 75 % / 100 % pour cette fenêtre, et *Default size (new windows)* pour choisir la taille d'ouverture de toutes les nouvelles fenêtres de Doorn (réglage enregistré dans `NINE HANDS | DSP/Doorn/settings.xml` du dossier de données de l'utilisateur, comme Octopus).
-- **Barre de presets** sous la ligne d'état : flèches = preset précédent / suivant, clic sur le nom = menu (presets d'usine, presets utilisateur 1 à 9).
-- **Ligne d'état** : uniquement le réglage de la commande que l'on bouge (potards en %, inverseurs, footswitchs), en police Poppins, grande et lisible (v2.10 : texte et cadre agrandis, fond plus sombre, barre de presets agrandie aussi) ; apparaît quand un réglage bouge, puis s'efface.
-- **Anti-gel v2** : moteur de rendu logiciel forcé sous Windows (réappliqué à chaque nouvelle fenêtre hôte), fenêtre opaque, timer 30 Hz qui ne redessine que ce qui a changé (aucun redessin au repos), aucun calcul lourd dans le dessin (caches d'images reconstruits par le timer seulement, après stabilisation de la taille ou changement d'échelle), chien de garde qui relance le rendu si un redessin n'arrive pas en 1,5 s, jamais de redimensionnement forcé par la fenêtre ; côté audio, aucun appel à l'hôte ni allocation depuis le thread audio (les changements MIDI passent par une file vidée sur le thread de messages, paramètres lus par pointeurs mis en cache). JUCE 8.0.15.
-- Potards : seul le repère blanc tourne, les reflets du chapeau restent fixes (lumière en haut à gauche). Double-clic = midi.
-- Inverseurs : photo des switchs de la vraie Thorn (positions bas et centre), position haute reconstituée avec la même lumière ; clic = bascule (inverseur 3 positions : clic au-dessus / en dessous du pivot), molette possible.
-- Footswitchs : celui d'Echoflex (référence NINE HANDS | DSP), bouton assombri tant qu'on appuie.
-- Jacks du kit NINE HANDS | DSP en haut (OUT à gauche, IN à droite), logo NINE HANDS | DSP, nom **DOORN** à la place de « THORN ».
+- **Visuel** : design fourni par l'utilisateur (`gui/`, `gui/manifest.json`, archive d'origine dans `design/v017/`), image **965 × 1800 px** plein cadre, fond transparent seulement autour des jacks. Calques : fond (textes, logo NINE HANDS | DSP, jacks, footswitchs, cadre de l'écran et ombres portées des commandes intégrés), halo du BOOST, potards (centre fixe, couronne + flèche qui tournent sur 270°, reflet fixe par-dessus), inverseurs (3 images chacun, image du milieu ~55 ms pendant une bascule haut ↔ bas), LED. Au repos, le rendu du plugin est identique à l'image de référence du design.
+- **Fenêtre** : repère 482,5 × 900 unités (image / 2), ouverte à **493 px de haut** (« 60 % »), impossible de la réduire en dessous, proportions bloquées, jusqu'à 150 %. Clic droit > *Plugin size* : 60 % / 75 % / 100 % pour cette fenêtre, et *Default size (new windows)* pour la taille d'ouverture de toutes les nouvelles fenêtres (`NINE HANDS | DSP/Doorn/settings.xml` du dossier de données de l'utilisateur, comme Octopus).
+- **Écran de presets** : nom du preset (ou *Edited*), flèches = preset précédent / suivant, clic sur le nom = menu des presets.
+- **Ligne d'état** : bulle en Poppins, plus grande que l'écran, qui s'affiche par-dessus quand un réglage bouge (potards en %, inverseurs, footswitchs, messages du MIDI Learn), puis s'efface.
+- **Lumières** : clic droit > *Lights* : halo de la LED (lentille et halo séparés, seule le halo change) et halo du potard BOOST, chacun en Low / Medium (défaut) / High ; enregistré avec le projet, non automatisable.
+- **Menus** : design des menus d'Octopus (`NineHandsMenu.h`, en-têtes avec pastille couleur sable), toujours ouverts là où l'on clique (le menu de presets ouvert depuis l'écran reste accroché à l'écran).
+- **Footswitchs** : bascule à l'appui, bouton assombri tant qu'on appuie.
+- **Anti-gel v2** : moteur de rendu logiciel forcé sous Windows (réappliqué à chaque nouvelle fenêtre hôte), fenêtre opaque, timer 30 Hz qui ne redessine que ce qui a changé (aucun redessin au repos), aucun calcul lourd dans le dessin (cache du fond reconstruit par le timer seulement), chien de garde qui relance le rendu si un redessin n'arrive pas en 1,5 s, jamais de redimensionnement forcé par la fenêtre ; côté audio, aucun appel à l'hôte ni allocation depuis le thread audio. JUCE 8.0.15.
 
 ## MIDI
 
@@ -103,12 +103,14 @@ YouTube normalise le volume (les niveaux relatifs ne sont pas mesurables). Donn�
 
 ## Fichiers
 
-- `DoornDSP.h` : moteur audio (sans JUCE, testé par `tests/test_dsp.cpp`).
-- `PluginProcessor.*`, `PluginEditor.*` : plugin JUCE 8.0.15.
-- `background.jpg`, `toggle_strip.png`, `glow_red.png`, `Poppins-Medium.ttf` : visuel intégré.
-- `tools/make_background.py` (fond), `tools/switch_photo.py` (inverseurs), `tools/controls_art.py` (footswitch), `tools/render/` (captures de la vraie fenêtre sous Linux).
-- `design/` : visuel fourni, photo du circuit imprimé, photo des switchs.
-- Polices : Poppins (ligne d'état), Fondamento et Alegreya SC (inscriptions du fond) (SIL Open Font License, `assets/OFL_*.txt`).
+- `DoornDSP.h` : moteur audio (sans JUCE, testé par `tests/test_dsp.cpp`, `tests/test_noise.cpp`, `tests/test_haze.cpp`).
+- `PluginProcessor.*`, `PluginEditor.*`, `NineHandsMenu.h`, `WigaWindowSize.h` : plugin JUCE 8.0.15.
+- `gui/` : visuel intégré (design v017) ; `Layout.h` est généré depuis `gui/manifest.json` par `tools/layout_from_manifest.py`.
+- `tools/render/` : captures de la vraie fenêtre sous Linux (`DoornRender <dossier> NineHandsLogo.svg`) ; `tools/manual.py` : notice (français).
+- `design/` : visuels fournis (design v017, ancien visuel), photo du circuit imprimé, photo des switchs.
+- Polices : Poppins (écran, ligne d'état, menus), Barlow Condensed (couverture de la notice) (SIL Open Font License).
+
+## Historique
 
 - v2.12.1 : menu de taille de fenêtre : « 60 % (default) », 75 %, 100 % (plus de taille en pixels)
 - v2.13.0 : clic droit > *Plugin size* > *Default size (new windows)* : taille par défaut des nouvelles fenêtres au choix (60 / 75 / 100 %), comme dans Octopus
@@ -116,3 +118,4 @@ YouTube normalise le volume (les niveaux relatifs ne sont pas mesurables). Donn�
 - v2.14.0 : fin du grésillement sifflant. L'écrêtage numérique repliait ses harmoniques en sifflement inharmonique qui suit la note (mesuré à −33 / −39 dB sous la note dans l'aigu). Les écrêteurs sont maintenant anti-repliement (méthode par primitive, ADAA) avec une courbe en tangente hyperbolique, au coude plus doux et plus naturel que l'ancien coude dur : parasite ramené à −52 / −68 dB. La voix est recalée sur la vidéo de référence avec ces écrêteurs, la bosse fixe de présence à 2,9 kHz est retirée et le plateau aigu de sortie baisse de 2,5 dB. Le paramètre d'automation de l'interrupteur s'appelle désormais « Footswitch » (au lieu de « Bypass Footswitch ») : Octopus affichait l'état de Doorn à l'envers. Même identifiant interne, les sessions, automations et MIDI Learn existants sont conservés.
 - v2.15.0 : LEVEL 10 dB plus bas sur toute sa course : la sortie ne sature plus dans le DAW au-delà de midi (avec les presets d'usine, plus de saturation même LEVEL à fond). Couche fuzz réduite à environ 13 % du son (avant environ 45 %), juste pour la texture ; la couche diodes compense : même niveau, même équilibre tonal face à la vidéo de référence.
 - v2.16.0 : les trois modes sortent au même volume (mesuré à travers un baffle : Laerm sortait ~4 dB plus fort que SDT-1 et SDT-2 ~2,7 dB moins fort ; écart ramené à ±0,5 dB dès 10 h de gain).
+- v3.0.0 : nouveau design (v017) : boîtier noir aux fissures sable, potards noirs à 3 calques, potard BOOST en verre dépoli blanc qui s'allume avec le boost, LED blanche, écran de presets, ligne d'état en bulle ; halos réglables (clic droit > *Lights*) ; menus au design d'Octopus, ouverts là où l'on clique ; notice en français sur le gabarit NINE HANDS | DSP. Son inchangé.

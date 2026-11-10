@@ -1,35 +1,37 @@
 #include "PluginEditor.h"
 #include "BinaryData.h"
-#include "Layout.h"
 #include "WigaWindowSize.h"
 
 using namespace juce;
 
 namespace
 {
-    // Positions dans le repere de reference 760 x 958 (fond 1520 x 1916 = 2 x 760 x 958),
-    // generees par tools/make_background.py dans Layout.h (pedale agrandie en v1.1, commandes a l'echelle)
-    const Point<float>* const knobPos = layout::knobPos;
-    const float knobR = layout::knobR, miniR = layout::miniR;
-    const Point<float> eqPos = layout::eqPos, modePos = layout::modePos;
-    const float leverHalf = 48.0f * layout::sc;     // demi-cote du sprite de l'inverseur (96 unites en v1.0)
-    const Point<float> ledPos = layout::ledPos;
-    const float ledR = 8.6f * layout::sc;
-    const Rectangle<float> glowRect = layout::glowRect;
-    const Point<float> boostPos = layout::boostPos, bypassPos = layout::bypassPos;
-    const float footR = 60.0f * layout::sc;
-    // ligne d'etat et barre de presets : entre les inscriptions des inverseurs et la LED
-    const Rectangle<float> statusRect { 196.0f, 590.0f, 368.0f, 50.0f };   // v2.10 : plus grande et plus contrastee
-    const Rectangle<float> presetRect { 186.0f, 645.0f, 388.0f, 37.0f };
+    // Repere : image du design v017 (965 x 1800 px) / 2, positions generees dans Layout.h depuis gui/manifest.json
+    const Rectangle<float> screenRect = layout::screenRect;
+    // ligne d'etat : bulle temporaire centree sur l'ecran de presets (plus grande que l'ecran, lisible a 60 %)
+    const Rectangle<float> statusRect = Rectangle<float> (300.0f, 50.0f).withCentre (layout::screenRect.getCentre());
+    const float arrowZone = 30.0f;     // zones cliquables des fleches de l'ecran (largeur en unites)
 
-    const float rotStart = MathConstants<float>::pi * (7.0f / 6.0f);    // -150 degres
-    const float rotEnd   = MathConstants<float>::pi * (17.0f / 6.0f);   // +150 degres
+    // rotation des potards (manifest) : valeur 0 -> -135 degres, 0,5 -> fleche en haut, 1 -> +135 degres
+    const float rotStart = MathConstants<float>::pi * 1.25f;
+    const float rotEnd   = MathConstants<float>::pi * 2.75f;
 
-    const Colour redCore (0xffffd6c8), redMid (0xffff2616), redDeep (0xff8c0504);
-    const Colour inkWhite (0xffececec);
+    const Colour inkWhite (0xffe9e7e2);          // texte de l'ecran
+    const Colour screenFace (0xff151516), screenEdge (0xff4b4b50);
+    const Colour menuAccent (0xffcdb995);        // pastille des en-tetes de menu (sable des fissures)
 
     const char* const valueIds[] = { "gain", "boost", "level", "treble", "mids", "bass", "eq", "mode", "boostOn", "active", "gate" };
     constexpr int numValueIds = 11;
+
+    Image png (const void* data, int size) { return ImageCache::getFromMemory (data, size); }
+
+    void drawImageIn (Graphics& g, const Image& im, Rectangle<float> r, float opacity = 1.0f)
+    {
+        if (! im.isValid() || opacity <= 0.0f) return;
+        g.setOpacity (opacity);
+        g.drawImage (im, r);
+        g.setOpacity (1.0f);
+    }
 }
 
 //==============================================================================
@@ -38,68 +40,45 @@ namespace
 bool DoornKnob::hitTest (int x, int y)
 {
     const auto c = getLocalBounds().toFloat().getCentre();
-    return c.getDistanceFrom ({ (float) x, (float) y }) <= getWidth() * 0.5f;
+    return c.getDistanceFrom ({ (float) x, (float) y }) <= (float) getWidth() * 0.5f * diamRatio;
 }
 
 void DoornKnobLookAndFeel::drawRotarySlider (Graphics& g, int x, int y, int w, int h,
                                              float pos, float startAngle, float endAngle, Slider& s)
 {
+    if (img == nullptr) return;
     const auto* k = dynamic_cast<DoornKnob*> (&s);
     const bool mini = k != nullptr && k->isMini;
-    const auto c = Rectangle<float> ((float) x, (float) y, (float) w, (float) h).getCentre();
-    const float R = (float) jmin (w, h) * 0.5f;          // = rayon du potard a l'ecran
     const float a = startAngle + pos * (endAngle - startAngle);
+    const Rectangle<float> r ((float) x, (float) y, (float) w, (float) h);
+    g.setImageResamplingQuality (Graphics::highResamplingQuality);
+
+    auto rotated = [&] (const Image& im, float opacity)
+    {
+        if (! im.isValid() || opacity <= 0.0f) return;
+        const float iw = (float) im.getWidth(), ih = (float) im.getHeight();
+        g.setOpacity (opacity);
+        g.drawImageTransformed (im, AffineTransform::rotation (a, iw * 0.5f, ih * 0.5f)
+                                        .scaled (r.getWidth() / iw, r.getHeight() / ih)
+                                        .translated (r.getX(), r.getY()));
+        g.setOpacity (1.0f);
+    };
 
     if (! mini)
     {
-        // fleche blanche peinte sur le chapeau (forme du visuel) ; lumiere fixe en haut a gauche :
-        // la peinture est un peu plus claire tournee vers la lumiere, ombre tres legere en bas a droite
-        Path p;
-        p.startNewSubPath (0.0f, -0.757f * R);
-        p.lineTo ( 0.180f * R, -0.270f * R);
-        p.lineTo ( 0.0f,       -0.360f * R);
-        p.lineTo (-0.180f * R, -0.270f * R);
-        p.closeSubPath();
-        const auto tr = AffineTransform::rotation (a).translated (c);
-        const float lightFacing = 0.5f + 0.5f * std::cos (a + MathConstants<float>::pi * 0.25f);
-        g.setColour (Colours::black.withAlpha (0.42f));
-        g.fillPath (p, tr.translated (R * 0.008f, R * 0.010f));
-        g.setColour (Colour::greyLevel (0.90f + 0.08f * lightFacing));
-        g.fillPath (p, tr);
+        drawImageIn (g, img->centre, r);          // centre fixe
+        rotated (img->rotating, 1.0f);            // couronne + fleche
+        drawImageIn (g, img->reflect, r);         // reflet fixe par-dessus
+        return;
     }
-    else
-    {
-        // petit potard BOOST transparent (fume) : eclaire de l'interieur quand le boost est enclenche,
-        // le curseur (barrette) apparait alors nettement ; boost coupe = curseur sombre a peine visible
-        const float lit = k != nullptr ? k->lit : 0.0f;
-        const Colour warm (0xffffd9a0);
-        if (lit > 0.001f)
-        {
-            ColourGradient glow (warm.withAlpha (0.78f * lit), c.x, c.y, warm.withAlpha (0.0f), c.x + R * 0.98f, c.y, true);
-            glow.addColour (0.55, warm.withAlpha (0.42f * lit));
-            g.setGradientFill (glow);
-            g.fillEllipse (c.x - R * 0.98f, c.y - R * 0.98f, R * 1.96f, R * 1.96f);
-        }
-        const float r0 = 0.22f * R, r1 = 0.88f * R, bw = 0.20f * R;
-        const Point<float> p0 = c + Point<float> (std::sin (a), -std::cos (a)) * r0;
-        const Point<float> p1 = c + Point<float> (std::sin (a), -std::cos (a)) * r1;
-        Path bar; bar.addLineSegment ({ p0, p1 }, bw);
-        // eteint : barrette grise dans l'ombre du dome fume ; allume : blanche, avec un leger halo de diffusion
-        if (lit > 0.001f)
-        {
-            g.setColour (Colours::white.withAlpha (0.30f * lit));
-            g.strokePath (bar, PathStrokeType (bw * 2.2f, PathStrokeType::curved, PathStrokeType::rounded));
-        }
-        g.setColour (Colours::black.withAlpha (0.25f * (1.0f - lit)));
-        g.drawLine ({ p0.translated (0.6f, 0.8f), p1.translated (0.6f, 0.8f) }, bw);
-        g.setColour (Colour (0xff6d7376).interpolatedWith (Colours::white, lit).withAlpha (0.80f + 0.20f * lit));
-        g.strokePath (bar, PathStrokeType (bw, PathStrokeType::curved, PathStrokeType::rounded));
-        // reflet du dome par-dessus (fixe)
-        ColourGradient sh (Colours::white.withAlpha (0.18f), c.x - R * 0.35f, c.y - R * 0.55f,
-                           Colours::white.withAlpha (0.0f), c.x, c.y, true);
-        g.setGradientFill (sh);
-        g.fillEllipse (c.x - R * 0.85f, c.y - R * 0.85f, R * 1.1f, R * 0.9f);
-    }
+
+    // BOOST : verre depoli blanc, eteint -> allume en fondu (boost enclenche par le footswitch de gauche)
+    const float lit = k != nullptr ? k->lit : 0.0f;
+    drawImageIn (g, img->bCentreOff, r, 1.0f - lit);
+    drawImageIn (g, img->bCentreOn,  r, lit);
+    rotated (img->bRotOff, 1.0f - lit);
+    rotated (img->bRotOn,  lit);
+    drawImageIn (g, img->bReflect, r);
 }
 
 //==============================================================================
@@ -114,8 +93,8 @@ LeverSwitch::LeverSwitch (RangedAudioParameter& p, int numPositions)
                           const int from = frameFor (pos);
                           pos = np;
                           targetFrame = frameFor (pos);
-                          shownFrame = (from + targetFrame) / 2;          // position intermediaire ~55 ms
-                          if (shownFrame == from || shownFrame == targetFrame) shownFrame = targetFrame;
+                          // haut <-> bas : image du milieu ~55 ms pendant la bascule
+                          shownFrame = std::abs (from - targetFrame) == 2 ? 1 : targetFrame;
                           transitionUntil = Time::getMillisecondCounterHiRes() + 55.0;
                           repaint();
                       }
@@ -129,8 +108,8 @@ LeverSwitch::LeverSwitch (RangedAudioParameter& p, int numPositions)
 
 int LeverSwitch::frameFor (int p) const
 {
-    if (positions == 2) return p == 0 ? 0 : 4;
-    return jlimit (0, 4, p * 2);
+    if (positions == 2) return p == 0 ? 0 : 2;     // EQ : off = levier en haut, on = levier en bas
+    return jlimit (0, 2, p);                        // mode : SDT-2 haut, Laerm milieu, SDT-1 bas
 }
 
 void LeverSwitch::tick (double now)
@@ -144,10 +123,10 @@ void LeverSwitch::tick (double now)
 
 void LeverSwitch::paint (Graphics& g)
 {
-    if (! strip.isValid()) return;
-    const int fs = strip.getWidth();
+    const auto& im = frames[jlimit (0, 2, shownFrame)];
+    if (! im.isValid()) return;
     g.setImageResamplingQuality (Graphics::highResamplingQuality);
-    g.drawImage (strip, 0, 0, getWidth(), getHeight(), 0, shownFrame * fs, fs, fs);
+    g.drawImage (im, getLocalBounds().toFloat());
 }
 
 void LeverSwitch::moveTo (int np)
@@ -162,8 +141,8 @@ void LeverSwitch::mouseDown (const MouseEvent& e)
 {
     if (e.mods.isPopupMenu()) { if (onRightClick) onRightClick(); return; }
     if (positions == 2) { moveTo (1 - pos); return; }
-    // inverseur 3 positions : clic au-dessus du centre = levier vers le haut, en dessous = vers le bas
-    const bool upper = e.position.y < getHeight() * 0.5f;
+    // inverseur 3 positions : clic au-dessus du pivot = levier vers le haut, en dessous = vers le bas
+    const bool upper = e.position.y < (float) getHeight() * pivotY;
     if (upper) moveTo (pos > 0 ? pos - 1 : pos);
     else       moveTo (pos < positions - 1 ? pos + 1 : pos);
 }
@@ -178,7 +157,7 @@ void LeverSwitch::mouseWheelMove (const MouseEvent&, const MouseWheelDetails& w)
 //==============================================================================
 FootSwitchArea::FootSwitchArea (RangedAudioParameter& p, std::atomic<float>* holdMomentary)
     : hold (holdMomentary),
-      attachment (p, [this] (float v) { value = v > 0.5f; repaint(); })
+      attachment (p, [this] (float v) { value = v > 0.5f; })
 {
     attachment.sendInitialUpdate();
     setMouseCursor (MouseCursor::PointingHandCursor);
@@ -192,7 +171,7 @@ bool FootSwitchArea::hitTest (int x, int y)
 
 void FootSwitchArea::paint (Graphics& g)
 {
-    if (pressed)
+    if (pressed)      // bouton assombri tant qu'on appuie (Echoflex)
     {
         g.setColour (Colours::black.withAlpha (0.25f));
         g.fillEllipse (getLocalBounds().toFloat().reduced ((float) getWidth() * 0.23f));
@@ -234,11 +213,53 @@ DoornAudioProcessorEditor::DoornAudioProcessorEditor (DoornAudioProcessor& p)
       boostFs  (*p.apvts.getParameter ("boostOn"), p.apvts.getRawParameterValue ("holdMomentary")),
       bypassFs (*p.apvts.getParameter ("active"),  p.apvts.getRawParameterValue ("holdMomentary"))
 {
-    background = ImageCache::getFromMemory (BinaryData::background_jpg, BinaryData::background_jpgSize);
-    glowRed    = ImageCache::getFromMemory (BinaryData::glow_red_png,   BinaryData::glow_red_pngSize);
-    const auto strip = ImageCache::getFromMemory (BinaryData::toggle_strip_png, BinaryData::toggle_strip_pngSize);
-    // police lisible et standard (sans empattement) pour la ligne d'etat et la barre de presets
-    labelFace = Typeface::createSystemTypefaceFor (BinaryData::PoppinsMedium_ttf, BinaryData::PoppinsMedium_ttfSize);
+    using namespace BinaryData;
+    background = png (Doorn_Background_png, Doorn_Background_pngSize);
+    boostGlow  = png (boost_glow_on_png, boost_glow_on_pngSize);
+    ledOff     = png (led_off_png, led_off_pngSize);
+    ledOn      = png (led_on_png, led_on_pngSize);
+    {
+        // LED : lentille (opaque jusqu'a ~30 px sur 180) et halo separes, pour regler le halo seul (clic droit > Lights)
+        const int w = ledOn.getWidth(), h = ledOn.getHeight();
+        ledLens = Image (Image::ARGB, w, h, true);
+        ledHalo = Image (Image::ARGB, w, h, true);
+        const Image::BitmapData src (ledOn, Image::BitmapData::readOnly);
+        Image::BitmapData lens (ledLens, Image::BitmapData::writeOnly), halo (ledHalo, Image::BitmapData::writeOnly);
+        const float c = (float) (w - 1) * 0.5f, r0 = 27.0f * (float) w / 180.0f, r1 = 31.0f * (float) w / 180.0f;
+        for (int y = 0; y < h; ++y)
+            for (int x = 0; x < w; ++x)
+            {
+                const float d = std::hypot ((float) x - c, (float) y - c);
+                const float t = jlimit (0.0f, 1.0f, (d - r0) / (r1 - r0));
+                const float m = 1.0f - t * t * (3.0f - 2.0f * t);              // 1 dans la lentille, 0 dans le halo
+                const auto px = src.getPixelColour (x, y);
+                lens.setPixelColour (x, y, px.withMultipliedAlpha (m));
+                halo.setPixelColour (x, y, px.withMultipliedAlpha (1.0f - m));
+            }
+    }
+    knobImg.centre     = png (knob_center_fixed_190px_png, knob_center_fixed_190px_pngSize);
+    knobImg.rotating   = png (knob_rotating_crown_and_arrow_190px_png, knob_rotating_crown_and_arrow_190px_pngSize);
+    knobImg.reflect    = png (knob_reflect_static_190px_png, knob_reflect_static_190px_pngSize);
+    knobImg.bCentreOff = png (boost_center_off_100px_png, boost_center_off_100px_pngSize);
+    knobImg.bRotOff    = png (boost_rotating_off_100px_png, boost_rotating_off_100px_pngSize);
+    knobImg.bCentreOn  = png (boost_center_on_100px_png, boost_center_on_100px_pngSize);
+    knobImg.bRotOn     = png (boost_rotating_on_100px_png, boost_rotating_on_100px_pngSize);
+    knobImg.bReflect   = png (boost_reflect_static_100px_png, boost_reflect_static_100px_pngSize);
+    lnf.img = &knobImg;
+
+    eqSwitch.frames[0]   = png (switch_left_up_png, switch_left_up_pngSize);
+    eqSwitch.frames[1]   = png (switch_left_mid_png, switch_left_mid_pngSize);
+    eqSwitch.frames[2]   = png (switch_left_down_png, switch_left_down_pngSize);
+    modeSwitch.frames[0] = png (switch_right_up_png, switch_right_up_pngSize);
+    modeSwitch.frames[1] = png (switch_right_mid_png, switch_right_mid_pngSize);
+    modeSwitch.frames[2] = png (switch_right_down_png, switch_right_down_pngSize);
+    eqSwitch.pivotY = modeSwitch.pivotY = layout::switchPivotY;
+
+    // Poppins embarquee : ecran de presets, ligne d'etat et menus (design d'Octopus)
+    regularFace = Typeface::createSystemTypefaceFor (PoppinsRegular_ttf, PoppinsRegular_ttfSize);
+    labelFace   = Typeface::createSystemTypefaceFor (PoppinsMedium_ttf, PoppinsMedium_ttfSize);
+    boldFace    = Typeface::createSystemTypefaceFor (PoppinsBold_ttf, PoppinsBold_ttfSize);
+    menuLnf.f = { regularFace, labelFace, boldFace };
 
     rightClickFwd.callback = [this] (Component* c)
     {
@@ -252,6 +273,7 @@ DoornAudioProcessorEditor::DoornAudioProcessorEditor (DoornAudioProcessor& p)
     {
         auto& s = knobs[i];
         s.isMini = (i == 1);
+        s.diamRatio = layout::knobDiamRatio[i];
         s.setSliderStyle (Slider::RotaryHorizontalVerticalDrag);
         s.setTextBoxStyle (Slider::NoTextBox, false, 0, 0);
         s.setRotaryParameters (rotStart, rotEnd, true);
@@ -269,7 +291,6 @@ DoornAudioProcessorEditor::DoornAudioProcessorEditor (DoornAudioProcessor& p)
     modeSwitch.onRightClick = [this] { showContextMenu (7); };
     for (auto* l : { &eqSwitch, &modeSwitch })
     {
-        l->strip = strip;
         l->onUserChange = [this] { proc.currentPreset = -1; };
         addAndMakeVisible (*l);
     }
@@ -284,13 +305,15 @@ DoornAudioProcessorEditor::DoornAudioProcessorEditor (DoornAudioProcessor& p)
     lastPresetCounter = proc.presetCounter.load();
     lastMidiCount = proc.midiCounter.load();
     ledLevel = proc.raw ("active") > 0.5f ? 1.0f : 0.0f;
+    ledGlowLvl   = jlimit (0, 2, roundToInt (proc.raw ("ledGlow")));
+    boostGlowLvl = jlimit (0, 2, roundToInt (proc.raw ("boostGlow")));
     boostLit = proc.raw ("boostOn") > 0.5f ? 1.0f : 0.0f;
     knobs[1].lit = boostLit;
 
     // Taille par defaut = taille minimale (impossible de reduire en dessous), proportions bloquees
-    const int defaultW = roundToInt ((float) defaultH * (float) baseW / (float) baseH);
+    const int defaultW = roundToInt ((float) defaultH * baseW / baseH);
     setResizable (true, true);
-    setResizeLimits (defaultW, defaultH, baseW * 3 / 2, baseH * 3 / 2);
+    setResizeLimits (defaultW, defaultH, roundToInt ((float) maxH * baseW / baseH), maxH);
     if (auto* cons = getConstrainer())
         cons->setFixedAspectRatio ((double) baseW / (double) baseH);
     setOpaque (true);                      // anti-gel : l'hote ne redessine jamais ce qui est derriere la fenetre
@@ -304,6 +327,7 @@ DoornAudioProcessorEditor::DoornAudioProcessorEditor (DoornAudioProcessor& p)
 DoornAudioProcessorEditor::~DoornAudioProcessorEditor()
 {
     stopTimer();
+    PopupMenu::dismissAllActiveMenus();
     for (auto& s : knobs)
     {
         s.removeMouseListener (&rightClickFwd);
@@ -314,24 +338,24 @@ DoornAudioProcessorEditor::~DoornAudioProcessorEditor()
 //==============================================================================
 int DoornAudioProcessorEditor::sizeHeight (int idx)
 {
-    const int h[numSizes] = { (int) defaultH, roundToInt (baseH * 0.75f), (int) baseH };
+    const int h[numSizes] = { (int) defaultH, roundToInt (refH * 0.75f), (int) refH };
     return h[jlimit (0, numSizes - 1, idx)];
 }
 
 void DoornAudioProcessorEditor::setScaledHeight (int h)
 {
-    h = jmax ((int) defaultH, h);
-    setSize (roundToInt ((float) h * (float) baseW / (float) baseH), h);
+    h = jlimit ((int) defaultH, (int) maxH, h);
+    setSize (roundToInt ((float) h * baseW / baseH), h);
 }
 
 Rectangle<int> DoornAudioProcessorEditor::scaled (Rectangle<float> r) const
 {
-    const float s = (float) getHeight() / (float) baseH;
-    return r.transformedBy (AffineTransform::scale (s)).getSmallestIntegerContainer();
+    return r.transformedBy (AffineTransform::scale (unitScale())).getSmallestIntegerContainer();
 }
 
 float DoornAudioProcessorEditor::physicalScale() const
 {
+    if (forcedScale > 0.0f) return forcedScale;
     return jlimit (1.0f, 4.0f, (float) Component::getApproximateScaleFactorForComponent (this));
 }
 
@@ -341,7 +365,7 @@ void DoornAudioProcessorEditor::showStatus()
 }
 
 //==============================================================================
-// Caches d'affichage : fond et calques lumineux deja a la taille de la fenetre
+// Cache d'affichage : fond deja a la taille physique de la fenetre (net sur Retina / 4K)
 //==============================================================================
 void DoornAudioProcessorEditor::rebuildCaches (float sc)
 {
@@ -352,44 +376,28 @@ void DoornAudioProcessorEditor::rebuildCaches (float sc)
 
     cacheW = w; cacheH = h; cacheScale = sc;
     const int pw = roundToInt ((float) w * sc), ph = roundToInt ((float) h * sc);
-    bgScaled = (pw >= background.getWidth()) ? background : background.rescaled (pw, ph, Graphics::highResamplingQuality);
-
-    const float s = (float) h / (float) baseH;
-    const int gpx = roundToInt (glowRect.getWidth() * s * sc);
-    glowRedS   = (gpx >= glowRed.getWidth())   ? glowRed   : glowRed.rescaled   (gpx, gpx, Graphics::highResamplingQuality);
-
+    bgScaled = (ph >= background.getHeight()) ? background : background.rescaled (pw, ph, Graphics::highResamplingQuality);
     repaint();
 }
 
 void DoornAudioProcessorEditor::resized()
 {
-    // anti-gel : jamais de setSize ici (mise a l'echelle Windows 125 / 150 % : tolerance de quelques px) ;
-    // les limites du constrainer suffisent, sinon boucle de redimensionnement avec l'hote
-
+    // anti-gel : jamais de setSize ici (les limites du constrainer suffisent)
     for (int i = 0; i < DoornAudioProcessor::numKnobs; ++i)
-    {
-        const float r = (i == 1) ? miniR : knobR;
-        knobs[i].setBounds (scaled ({ knobPos[i].x - r, knobPos[i].y - r, r * 2.0f, r * 2.0f }));
-    }
-    auto lever = [this] (LeverSwitch& l, Point<float> c)
-    {
-        l.setBounds (scaled ({ c.x - leverHalf, c.y - leverHalf, leverHalf * 2.0f, leverHalf * 2.0f }));
-    };
-    lever (eqSwitch, eqPos);
-    lever (modeSwitch, modePos);
-    boostFs.setBounds  (scaled ({ boostPos.x - footR,  boostPos.y - footR,  footR * 2.0f, footR * 2.0f }));
-    bypassFs.setBounds (scaled ({ bypassPos.x - footR, bypassPos.y - footR, footR * 2.0f, footR * 2.0f }));
+        knobs[i].setBounds (scaled (layout::knobRect[i]));
+    eqSwitch.setBounds (scaled (layout::eqRect));
+    modeSwitch.setBounds (scaled (layout::modeRect));
+    auto fs = [] (Point<float> c) { return Rectangle<float> (layout::footR * 2.0f, layout::footR * 2.0f).withCentre (c); };
+    boostFs.setBounds  (scaled (fs (layout::boostFsPos)));
+    bypassFs.setBounds (scaled (fs (layout::bypassFsPos)));
     resizeSettle = 4;
 }
 
 //==============================================================================
-// Anti-gel de la fenetre (Windows) : moteur de rendu logiciel
-//==============================================================================
 // Anti-gel v2 (NINE HANDS | DSP) :
 //  1. moteur de rendu logiciel force sur Windows (Direct2D peut figer la fenetre dans certains hotes),
 //     applique a chaque nouvelle fenetre hote (peer) et reverifie toutes les secondes, jamais en boucle ;
-//  2. aucun calcul lourd dans paint() : les caches d'images sont reconstruits par le timer seulement,
-//     apres stabilisation de la taille ou quand l'echelle d'affichage change (au plus toutes les 250 ms) ;
+//  2. aucun calcul lourd dans paint() : le cache du fond est reconstruit par le timer seulement ;
 //  3. chien de garde : si un redessin demande n'est pas arrive au bout de 1,5 s alors que la fenetre est
 //     visible, le moteur de rendu est reapplique et toute la fenetre est redessinee ;
 //  4. cote audio : aucun appel a l'hote ni allocation depuis le thread audio (voir PluginProcessor).
@@ -438,12 +446,10 @@ String DoornAudioProcessorEditor::buildPresetLine() const
     const int cp = proc.currentPreset.load();
     String s;
     if (cp >= 0 && cp < DoornAudioProcessor::getNumFactoryPresets())
-        s << "P" << (cp + 1) << "  " << DoornAudioProcessor::getFactoryPreset (cp).name;
+        s << (cp + 1) << ". " << DoornAudioProcessor::getFactoryPreset (cp).name;
     else if (cp > 100) s << "User " << (cp - 100);
     else               s << "Edited";
-    s << "  -  " << DoornAudioProcessor::modeNames()[roundToInt (proc.raw ("mode"))];
-    if (proc.raw ("boostOn") > 0.5f) s << " + boost";
-    if (proc.raw ("active") < 0.5f)  s << "  (bypass)";
+    if (proc.raw ("active") < 0.5f) s << "  (bypass)";
     return s;
 }
 
@@ -453,9 +459,9 @@ void DoornAudioProcessorEditor::timerCallback()
     const double now = Time::getMillisecondCounterHiRes();
     if (getPeer() != lastPeer || now - lastRendererCheckMs > 1000.0) { lastRendererCheckMs = now; useSoftwareRenderer(); }
 
-    // caches : reconstruits ici seulement (jamais dans paint)
-    if (resizeSettle > 0 && --resizeSettle == 0) rebuildCaches();
-    else if (resizeSettle == 0 && now - lastScaleCheckMs > 250.0)
+    // cache : reconstruit ici seulement (jamais dans paint)
+    if (resizeSettle > 0 && --resizeSettle == 0) rebuildCaches (forcedScale > 0.0f ? forcedScale : 0.0f);
+    else if (resizeSettle == 0 && forcedScale <= 0.0f && now - lastScaleCheckMs > 250.0)
     {
         lastScaleCheckMs = now;
         const float sc = physicalScale();
@@ -482,7 +488,7 @@ void DoornAudioProcessorEditor::timerCallback()
         if (std::abs (v - lastValues[i]) > 1.0e-4f) { lastValues[i] = v; changed = i; ++numChanged; }
     }
     const int pcount = proc.presetCounter.load();
-    if (pcount != lastPresetCounter) { lastPresetCounter = pcount; numChanged = 0; }   // preset : affiche dans la barre de presets
+    if (pcount != lastPresetCounter) { lastPresetCounter = pcount; numChanged = 0; }   // preset : affiche dans l'ecran
     if (numChanged == 1) { lastChanged = changed; showStatus(); learnLineUntil = 0.0; }
     for (int i = 0; i < DoornAudioProcessor::numKnobs; ++i)
         if (knobs[i].isMouseButtonDown()) { lastChanged = i; showStatus(); learnLineUntil = 0.0; }
@@ -512,27 +518,36 @@ void DoornAudioProcessorEditor::timerCallback()
     if (statusAlpha < 0.005f) statusAlpha = 0.0f;
     if (statusAlpha > 0.995f) statusAlpha = 1.0f;
 
-    // LED : rouge = effet actif, ambre = boost engage ; fondu (0,45 a l'allumage / 0,28 a l'extinction)
+    // clic droit > Lights : nouveau reglage -> on redessine les halos
+    const int lg = jlimit (0, 2, roundToInt (proc.raw ("ledGlow"))), bg = jlimit (0, 2, roundToInt (proc.raw ("boostGlow")));
+    if (lg != ledGlowLvl || bg != boostGlowLvl)
+    {
+        ledGlowLvl = lg; boostGlowLvl = bg;
+        askRepaint (scaled (glowArea (layout::ledRect)));
+        askRepaint (scaled (glowArea (layout::boostGlowRect)));
+    }
+
+    // LED blanche = effet actif ; fondu (0,45 a l'allumage / 0,28 a l'extinction)
     const bool on = proc.raw ("active") > 0.5f;
     ledLevel += ((on ? 1.0f : 0.0f) - ledLevel) * (on ? 0.45f : 0.28f);
     if (ledLevel < 0.003f) ledLevel = 0.0f;
     if (ledLevel > 0.997f) ledLevel = 1.0f;
-    // lumiere du potard BOOST : fondu (0,45 a l'allumage / 0,28 a l'extinction, comme les LED)
+    if (std::abs (ledLevel - drawnLed) > 0.004f)
+    {
+        drawnLed = ledLevel;
+        askRepaint (scaled (glowArea (layout::ledRect)));
+    }
+
+    // potard BOOST : s'allume avec le footswitch de gauche (meme fondu que la LED), halo derriere
     const float boostT = proc.raw ("boostOn") > 0.5f ? 1.0f : 0.0f;
     boostLit += (boostT - boostLit) * (boostT > boostLit ? 0.45f : 0.28f);
     if (std::abs (boostLit - boostT) < 0.003f) boostLit = boostT;
-    if (std::abs (boostLit - knobs[1].lit) > 0.003f || (boostLit == boostT && knobs[1].lit != boostT))
+    if (std::abs (boostLit - drawnBoost) > 0.003f)
     {
+        drawnBoost = boostLit;
         knobs[1].lit = boostLit;
         knobs[1].repaint();
-        askRepaint (scaled (Rectangle<float> (knobPos[1].x - miniR * 2.2f, knobPos[1].y - miniR * 2.2f, miniR * 4.4f, miniR * 4.4f)));
-    }
-
-    const float ledNow = ledLevel;        // pas de scintillement : au repos, aucun redessin (anti-gel)
-    if (std::abs (ledNow - drawnLed) > 0.004f)
-    {
-        drawnLed = ledNow;
-        askRepaint (scaled (glowRect));
+        askRepaint (scaled (glowArea (layout::boostGlowRect)));
     }
 
     // (le message de learn reste pendant le fondu de sortie)
@@ -547,136 +562,109 @@ void DoornAudioProcessorEditor::timerCallback()
     if (pl != lastPreset || hoverZone != drawnHover || midiFlash > 0)
     {
         lastPreset = pl; drawnHover = hoverZone;
-        askRepaint (scaled (presetRect.expanded (3.0f)));
+        askRepaint (scaled (screenRect.expanded (3.0f)));
     }
 }
 
 //==============================================================================
+// Halo selon clic droit > Lights : Low = discret et un peu plus serre, Medium = design d'origine,
+// High = design d'origine + seconde couche plus large (lumiere qui porte plus loin)
+void DoornAudioProcessorEditor::drawGlow (Graphics& g, const Image& im, const Image& wide, Rectangle<float> r, int lvl, float opacity) const
+{
+    if (opacity <= 0.0f) return;
+    if (lvl <= 0)
+    {
+        drawImageIn (g, im, r.withSizeKeepingCentre (r.getWidth() * 0.85f, r.getHeight() * 0.85f), 0.40f * opacity);
+        return;
+    }
+    if (lvl >= 2)      // couche large d'abord (image pleine : pas d'anneau sombre autour de la lentille)
+        drawImageIn (g, wide, glowArea (r), 0.55f * opacity);
+    drawImageIn (g, im, r, opacity);
+}
+
 void DoornAudioProcessorEditor::drawLed (Graphics& g)
 {
-    const float level = ledLevel;
-    if (level <= 0.003f) return;
+    g.setImageResamplingQuality (Graphics::highResamplingQuality);
+    drawImageIn (g, ledOff, layout::ledRect);
+    drawGlow (g, ledHalo, ledOn, layout::ledRect, ledGlowLvl, ledLevel);   // halo (reglable)
+    drawImageIn (g, ledLens, layout::ledRect, ledLevel);            // lentille blanc vif quand l'effet est actif
+}
 
-    // la facade recoit la lumiere de la LED (calques precalcules : fond x eclairement x couleur)
-    const auto gr = glowRect;
-    if (glowRedS.isValid())
+void DoornAudioProcessorEditor::drawScreen (Graphics& g)
+{
+    // fleches de l'ecran (dessinees dans le fond) : plus claires au survol
+    auto arrow = [&] (Point<float> c, bool left)
     {
-        g.setOpacity (level);
-        g.drawImage (glowRedS, gr);
-    }
-    g.setOpacity (1.0f);
+        Path p;
+        const float s = 4.6f;
+        if (left) p.addTriangle (c.x + s * 0.55f, c.y - s, c.x + s * 0.55f, c.y + s, c.x - s * 0.75f, c.y);
+        else      p.addTriangle (c.x - s * 0.55f, c.y - s, c.x - s * 0.55f, c.y + s, c.x + s * 0.75f, c.y);
+        g.setColour (screenFace);
+        g.fillEllipse (Rectangle<float> (s * 3.2f, s * 3.2f).withCentre (c));
+        g.setColour (Colours::white);
+        g.fillPath (p);
+    };
+    if (hoverZone == 1) arrow (layout::arrowLeft, true);
+    if (hoverZone == 3) arrow (layout::arrowRight, false);
 
-    const Colour core = redCore, mid = redMid, deep = redDeep;
-    const auto c = ledPos; const float r = ledR;
-
-    // halo optique tres faible autour de la lentille
-    ColourGradient halo (mid.withAlpha (0.22f * level), c.x, c.y, mid.withAlpha (0.0f), c.x + r * 2.6f, c.y, true);
-    g.setGradientFill (halo);
-    g.fillEllipse (c.x - r * 2.6f, c.y - r * 2.6f, r * 5.2f, r * 5.2f);
-
-    ColourGradient body (core.withAlpha (level), c.x - r * 0.10f, c.y - r * 0.12f,
-                         deep.withAlpha (level), c.x + r * 1.05f, c.y + r * 0.2f, true);
-    body.addColour (0.30, core.interpolatedWith (mid, 0.55f).withAlpha (level));
-    body.addColour (0.62, mid.withAlpha (level));
-    g.setGradientFill (body);
-    g.fillEllipse (c.x - r, c.y - r, r * 2.0f, r * 2.0f);
-
-    g.setColour (deep.darker (0.6f).withAlpha (0.55f * level));
-    g.drawEllipse (c.x - r + 0.6f, c.y - r + 0.6f, r * 2.0f - 1.2f, r * 2.0f - 1.2f, r * 0.12f);
-
-    ColourGradient sp (Colours::white.withAlpha (0.75f * level), c.x - r * 0.30f, c.y - r * 0.42f,
-                       Colours::white.withAlpha (0.0f), c.x - r * 0.30f + r * 0.32f, c.y - r * 0.42f, true);
-    g.setGradientFill (sp);
-    g.fillEllipse (c.x - r * 0.62f, c.y - r * 0.70f, r * 0.64f, r * 0.52f);
+    const auto r = screenRect.reduced (arrowZone, 0.0f);
+    g.setFont (Font (FontOptions (labelFace).withHeight (15.5f)));
+    g.setColour ((midiFlash > 0 ? Colour (0xffffd9a0) : inkWhite).withAlpha (hoverZone == 2 ? 1.0f : 0.90f));
+    g.drawFittedText (lastPreset, r.toNearestInt(), Justification::centred, 1, 0.7f);
 }
 
 void DoornAudioProcessorEditor::drawStatus (Graphics& g)
 {
     const float a = statusAlpha;
     if (a <= 0.0f) return;
-    g.setColour (Colour (0xff070a14).withAlpha (0.93f * a));
-    g.fillRoundedRectangle (statusRect, 8.0f);
-    g.setColour (Colour (0xffb79f6e).withAlpha (0.45f * a));       // filet couleur des fissures dorees
-    g.drawRoundedRectangle (statusRect.reduced (0.75f), 9.0f, 1.3f);
+    // bulle de la ligne d'etat : meme matiere que l'ecran de presets, plus grande pour rester lisible a 60 %
+    g.setColour (Colours::black.withAlpha (0.35f * a));
+    g.fillRoundedRectangle (statusRect.translated (1.5f, 2.5f), statusRect.getHeight() * 0.5f);
+    g.setColour (screenFace.withAlpha (0.97f * a));
+    g.fillRoundedRectangle (statusRect, statusRect.getHeight() * 0.5f);
+    g.setColour (screenEdge.withAlpha (a));
+    g.drawRoundedRectangle (statusRect.reduced (1.0f), statusRect.getHeight() * 0.5f - 1.0f, 1.6f);
 
-    // messages MIDI Learn plus longs : meme police, plus petite, sur deux lignes au besoin
     const bool longLine = lastLine1.length() > 18;
-    const Font f (FontOptions (labelFace).withHeight (longLine ? 21.0f : 38.0f));
-    g.setFont (f);
+    g.setFont (Font (FontOptions (labelFace).withHeight (longLine ? 17.0f : 30.0f)));
     g.setColour (inkWhite.withAlpha (a));
-    g.drawFittedText (lastLine1, statusRect.reduced (10.0f, 0.0f).toNearestInt(), Justification::centred, longLine ? 2 : 1, 0.75f);
-}
-
-void DoornAudioProcessorEditor::drawPresetBar (Graphics& g)
-{
-    const auto r = presetRect;
-    g.setColour (Colour (0xff070a14).withAlpha (0.85f));
-    g.fillRoundedRectangle (r, r.getHeight() * 0.5f);
-    g.setColour (Colour (0xffb79f6e).withAlpha (hoverZone != 0 ? 0.65f : 0.32f));
-    g.drawRoundedRectangle (r.reduced (0.6f), r.getHeight() * 0.5f, 1.1f);
-
-    const float aw = 34.0f;
-    auto arrow = [&] (Rectangle<float> ar, bool left, bool hot)
-    {
-        Path p;
-        const auto c = ar.getCentre();
-        const float s = 6.5f;
-        if (left) p.addTriangle (c.x + s * 0.6f, c.y - s, c.x + s * 0.6f, c.y + s, c.x - s * 0.8f, c.y);
-        else      p.addTriangle (c.x - s * 0.6f, c.y - s, c.x - s * 0.6f, c.y + s, c.x + s * 0.8f, c.y);
-        g.setColour (inkWhite.withAlpha (hot ? 1.0f : 0.62f));
-        g.fillPath (p);
-    };
-    arrow (r.withWidth (aw), true, hoverZone == 1);
-    arrow (r.withTrimmedLeft (r.getWidth() - aw), false, hoverZone == 3);
-
-    g.setFont (Font (FontOptions (labelFace).withHeight (25.0f)));
-    g.setColour ((midiFlash > 0 ? Colour (0xffffc070) : inkWhite).withAlpha (hoverZone == 2 ? 1.0f : 0.88f));
-    g.drawFittedText (lastPreset, r.reduced (aw, 0.0f).toNearestInt(), Justification::centred, 1, 0.7f);
+    g.drawFittedText (lastLine1, statusRect.reduced (18.0f, 0.0f).toNearestInt(), Justification::centred, longLine ? 2 : 1, 0.75f);
 }
 
 void DoornAudioProcessorEditor::paint (Graphics& g)
 {
     lastPaintMs = Time::getMillisecondCounterHiRes();
     repaintAskedMs = 0.0;
-    g.fillAll (Colours::black);
+    g.fillAll (Colour (0xff111112));          // autour des jacks : le fond de l'image est transparent
     // anti-gel : aucun rescale ici, on dessine le cache existant (ou l'original en attendant le timer)
     const Image& bg = bgScaled.isValid() ? bgScaled : background;
     g.setImageResamplingQuality (&bg == &background ? Graphics::highResamplingQuality : Graphics::lowResamplingQuality);
     if (bg.isValid())
         g.drawImage (bg, getLocalBounds().toFloat());
 
-    const float s = (float) getHeight() / (float) baseH;
-    g.addTransform (AffineTransform::scale (s));
+    g.addTransform (AffineTransform::scale (unitScale()));
+    // halo du potard BOOST (sous le potard, seulement quand le boost est enclenche)
+    g.setImageResamplingQuality (Graphics::highResamplingQuality);
+    drawGlow (g, boostGlow, boostGlow, layout::boostGlowRect, boostGlowLvl, boostLit);
     drawLed (g);
-    if (boostLit > 0.001f)
-    {
-        // la lumiere du potard transparent eclaire un peu la facade autour
-        const auto c = knobPos[1];
-        const Colour warm (0xffffcf8a);
-        ColourGradient h (warm.withAlpha (0.34f * boostLit), c.x, c.y, warm.withAlpha (0.0f), c.x + miniR * 2.1f, c.y, true);
-        h.addColour (0.45, warm.withAlpha (0.10f * boostLit));
-        g.setGradientFill (h);
-        g.fillEllipse (c.x - miniR * 2.1f, c.y - miniR * 2.1f, miniR * 4.2f, miniR * 4.2f);
-    }
+    drawScreen (g);
     drawStatus (g);
-    drawPresetBar (g);
 }
 
 //==============================================================================
-// Souris : barre de presets (fleches = precedent / suivant, nom = menu deroulant), clic droit = menu
+// Souris : ecran de presets (fleches = precedent / suivant, nom = menu deroulant), clic droit = menu
 //==============================================================================
 static int presetZoneAt (Point<float> p)
 {
-    if (! presetRect.contains (p)) return 0;
-    if (p.x < presetRect.getX() + 34.0f) return 1;
-    if (p.x > presetRect.getRight() - 34.0f) return 3;
+    if (! screenRect.contains (p)) return 0;
+    if (p.x < screenRect.getX() + arrowZone) return 1;
+    if (p.x > screenRect.getRight() - arrowZone) return 3;
     return 2;
 }
 
 void DoornAudioProcessorEditor::mouseMove (const MouseEvent& e)
 {
-    const float s = (float) getHeight() / (float) baseH;
-    hoverZone = presetZoneAt (e.position / s);
+    hoverZone = presetZoneAt (e.position / unitScale());
     setMouseCursor (hoverZone != 0 ? MouseCursor::PointingHandCursor : MouseCursor::NormalCursor);
 }
 
@@ -685,8 +673,7 @@ void DoornAudioProcessorEditor::mouseExit (const MouseEvent&) { hoverZone = 0; }
 void DoornAudioProcessorEditor::mouseDown (const MouseEvent& e)
 {
     if (e.mods.isPopupMenu()) { showContextMenu(); return; }
-    const float s = (float) getHeight() / (float) baseH;
-    switch (presetZoneAt (e.position / s))
+    switch (presetZoneAt (e.position / unitScale()))
     {
         case 1: stepPreset (-1); break;
         case 2: showPresetMenu(); break;
@@ -706,6 +693,8 @@ void DoornAudioProcessorEditor::stepPreset (int delta)
 void DoornAudioProcessorEditor::showPresetMenu()
 {
     PopupMenu m;
+    m.setLookAndFeel (&menuLnf);
+    NineHandsMenu::addHeader (m, menuLnf.f, NineHandsMenu::icoPreset, menuAccent, "Presets", buildPresetLine());
     m.addSectionHeader ("Factory presets");
     for (int i = 0; i < DoornAudioProcessor::getNumFactoryPresets(); ++i)
         m.addItem (100 + i, String (i + 1) + ". " + DoornAudioProcessor::getFactoryPreset (i).name, true, proc.currentPreset.load() == i);
@@ -720,7 +709,8 @@ void DoornAudioProcessorEditor::showPresetMenu()
     m.addSubMenu ("Load user preset", load);
     m.addSubMenu ("Save user preset", save);
 
-    m.showMenuAsync (PopupMenu::Options().withTargetScreenArea (localAreaToGlobal (scaled (presetRect))),
+    // menu de presets ouvert d'un clic gauche sur l'ecran : accroche a l'ecran
+    m.showMenuAsync (PopupMenu::Options().withTargetScreenArea (localAreaToGlobal (scaled (screenRect))),
         [safe = Component::SafePointer<DoornAudioProcessorEditor> (this)] (int r)
         {
             if (safe == nullptr || r == 0) return;
@@ -728,28 +718,7 @@ void DoornAudioProcessorEditor::showPresetMenu()
             if      (r >= 100 && r < 200) pr.applyFactoryPreset (r - 100);
             else if (r > 200 && r < 300)  pr.loadUserPreset (r - 200);
             else if (r > 300 && r < 400)  pr.saveUserPreset (r - 300);
-            safe->showStatus();
         });
-}
-
-void DoornAudioProcessorEditor::addMidiMenu (PopupMenu& menu, int learnIdx)
-{
-    auto ccText = [this] (int i)
-    {
-        const int cc = proc.ccMap[i].load();
-        return cc >= 0 ? "CC " + String (cc) : String (CharPointer_UTF8 ("\xe2\x80\x94"));
-    };
-    const int lt = proc.learnTarget.load();
-
-    // clic droit sur une commande : MIDI Learn de cette commande en tete du menu
-    if (learnIdx >= 0)
-    {
-        const String name = DoornAudioProcessor::learnDef (learnIdx).name;
-        menu.addItem (1000 + learnIdx, "MIDI Learn: " + name + " (" + ccText (learnIdx) + ")", true, lt == learnIdx);
-        menu.addItem (1100 + learnIdx, "Clear MIDI: " + name, proc.ccMap[learnIdx].load() >= 0);
-        if (lt >= 0) menu.addItem (1200, "Cancel MIDI learn");
-        menu.addSeparator();
-    }
 }
 
 void DoornAudioProcessorEditor::handleMidiMenu (int r)
@@ -762,8 +731,30 @@ void DoornAudioProcessorEditor::handleMidiMenu (int r)
 
 void DoornAudioProcessorEditor::showContextMenu (int learnIdx)
 {
+    using namespace NineHandsMenu;
     PopupMenu menu;
-    addMidiMenu (menu, learnIdx);
+    menu.setLookAndFeel (&menuLnf);
+    auto ccText = [this] (int i)
+    {
+        const int cc = proc.ccMap[i].load();
+        return cc >= 0 ? "CC " + String (cc) : String ("not assigned");
+    };
+    const int lt = proc.learnTarget.load();
+
+    if (learnIdx >= 0)
+    {
+        // menu d'une commande : en-tete (pastille + nom + assignation MIDI), puis MIDI Learn
+        const String name = DoornAudioProcessor::learnDef (learnIdx).name;
+        const int ico = learnIdx < 6 ? icoKnob : (learnIdx < 8 ? icoSwitch : icoPedal);
+        addHeader (menu, menuLnf.f, ico, menuAccent, name, "MIDI: " + ccText (learnIdx));
+        menu.addItem (1000 + learnIdx, "MIDI Learn: " + name, true, lt == learnIdx);
+        menu.addItem (1100 + learnIdx, "Clear MIDI: " + name, proc.ccMap[learnIdx].load() >= 0);
+        if (lt >= 0) menu.addItem (1200, "Cancel MIDI learn");
+        menu.addSeparator();
+    }
+    else
+        addHeader (menu, menuLnf.f, icoPedal, menuAccent, "Doorn", "Distortion  v" + String (JucePlugin_VersionString));
+
     {
         // Plugin size : taille de cette fenetre + taille par defaut des nouvelles fenetres (comme Octopus)
         const char* names[numSizes] = { "60 %", "75 %", "100 %" };
@@ -801,6 +792,14 @@ void DoornAudioProcessorEditor::showContextMenu (int learnIdx)
     for (int i = 0; i < 4; ++i) gate.addItem (50 + i, gateHelp[i], true, gNow == i);
     menu.addSubMenu ("Noise gate", gate);
 
+    PopupMenu lights;
+    const char* lv[3] = { "Low", "Medium (default)", "High" };
+    lights.addSectionHeader ("LED glow");
+    for (int i = 0; i < 3; ++i) lights.addItem (60 + i, lv[i], true, ledGlowLvl == i);
+    lights.addSectionHeader ("Boost knob glow");
+    for (int i = 0; i < 3; ++i) lights.addItem (63 + i, lv[i], true, boostGlowLvl == i);
+    menu.addSubMenu ("Lights", lights);
+
     PopupMenu settings;
     settings.addItem (40, "Smart relay: hold footswitch = momentary", true, proc.raw ("holdMomentary") > 0.5f);
     settings.addSeparator();
@@ -809,24 +808,20 @@ void DoornAudioProcessorEditor::showContextMenu (int learnIdx)
     menu.addSubMenu ("Settings", settings);
 
     PopupMenu midi;
+    midi.addSectionHeader ("MIDI Learn");
     for (int i = 0; i < DoornAudioProcessor::numLearn; ++i)
-    {
-        const int cc = proc.ccMap[i].load();
-        midi.addItem (1000 + i, "Learn: " + String (DoornAudioProcessor::learnDef (i).name)
-                                 + " (" + (cc >= 0 ? "CC " + String (cc) : String (CharPointer_UTF8 ("\xe2\x80\x94"))) + ")",
-                      true, proc.learnTarget.load() == i);
-    }
+        midi.addItem (1000 + i, "Learn: " + String (DoornAudioProcessor::learnDef (i).name) + "  (" + ccText (i) + ")", true, lt == i);
     midi.addSeparator();
-    if (proc.learnTarget.load() >= 0) midi.addItem (1200, "Cancel MIDI learn");
+    if (lt >= 0) midi.addItem (1200, "Cancel MIDI learn");
     midi.addItem (1201, "Clear all MIDI assignments");
     midi.addSeparator();
     midi.addItem (910, "CC n+32 = fine (14-bit) for knobs on CC 0-31", false);
-    midi.addItem (911, "Program Change 1-13  Factory presets", false);
+    midi.addItem (911, "Program Change 1-" + String (DoornAudioProcessor::getNumFactoryPresets()) + "  Factory presets", false);
     menu.addSubMenu ("MIDI", midi);
     menu.addSeparator();
-    menu.addItem (999, "Doorn distortion v" + String (JucePlugin_VersionString) + " - NINE HANDS | DSP", false);
+    menu.addItem (999, "Doorn v" + String (JucePlugin_VersionString) + "  NINE HANDS | DSP", false);
 
-    menu.showMenuAsync (PopupMenu::Options().withTargetComponent (this),
+    menu.showMenuAsync (PopupMenu::Options().withMousePosition(),       // menu clic droit : toujours la ou l'on clique
         [safe = Component::SafePointer<DoornAudioProcessorEditor> (this)] (int r)
         {
             if (safe == nullptr || r == 0) return;
@@ -842,6 +837,8 @@ void DoornAudioProcessorEditor::showContextMenu (int learnIdx)
             else if (r == 41) pr.setParamValue ("midiFsMode", 0.0f);
             else if (r == 42) pr.setParamValue ("midiFsMode", 1.0f);
             else if (r >= 50 && r <= 53) pr.setParamValue ("gate", (float) (r - 50));
+            else if (r >= 60 && r <= 62) { pr.setParamValue ("ledGlow", (float) (r - 60)); return; }
+            else if (r >= 63 && r <= 65) { pr.setParamValue ("boostGlow", (float) (r - 63)); return; }
             else if (r >= 100 && r < 200) pr.applyFactoryPreset (r - 100);
             else if (r > 200 && r < 300)  pr.loadUserPreset (r - 200);
             else if (r > 300 && r < 400)  pr.saveUserPreset (r - 300);
