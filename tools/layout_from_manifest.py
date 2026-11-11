@@ -32,7 +32,7 @@ fs = m['footswitches']
 scr = m['screen']
 glow = k['boost']['glow']
 
-out = f"""// genere par tools/layout_from_manifest.py a partir de gui/manifest.json (design v017) - ne pas modifier a la main
+out = f"""// genere par tools/layout_from_manifest.py a partir de gui/manifest.json (design v018) - ne pas modifier a la main
 // repere {m['canvas']['width'] * U:.1f} x {m['canvas']['height'] * U:.1f} unites = image {m['canvas']['width']} x {m['canvas']['height']} px / 2
 #pragma once
 #include <juce_graphics/juce_graphics.h>

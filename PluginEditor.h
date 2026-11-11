@@ -6,22 +6,15 @@
 #include "NineHandsMenu.h"
 
 //==============================================================================
-// Doorn v3 : interface du design v017 de l'utilisateur (gui/, manifest.json).
-// Potards en 3 calques : centre fixe, couronne + fleche qui tournent, reflet fixe par-dessus.
-// Potard BOOST en verre depoli blanc : calques « off » et « on » en fondu quand le boost s'enclenche.
+// Doorn v4 : interface du design v018 de l'utilisateur (gui/, manifest.json, 1235 x 1800 px).
+// Potards en 3 calques (centre fixe, couronne + fleche qui tournent, reflet fixe par-dessus), au modele
+// des potards NINE HANDS | DSP : flou de mouvement sur tout ce qui tourne, image prete calculee par le timer
+// (anti-gel v2 : paint() ne fait que la poser). Potard BOOST en verre depoli blanc : calques « off » / « on » en fondu.
 //==============================================================================
 struct KnobImages
 {
     juce::Image centre, rotating, reflect;     // potards noirs
     juce::Image bCentreOff, bRotOff, bCentreOn, bRotOn, bReflect;   // potard BOOST
-};
-
-class DoornKnobLookAndFeel : public juce::LookAndFeel_V4
-{
-public:
-    void drawRotarySlider (juce::Graphics&, int x, int y, int w, int h,
-                           float pos, float startAngle, float endAngle, juce::Slider&) override;
-    const KnobImages* img = nullptr;
 };
 
 class DoornKnob : public juce::Slider
@@ -30,7 +23,22 @@ public:
     bool isMini = false;
     float lit = 0.0f;                    // potard BOOST : allume (boost enclenche), en fondu
     float diamRatio = 0.95f;             // diametre visible / cote du sprite
+    const KnobImages* img = nullptr;
+    float startAngle = 0.0f, endAngle = 1.0f;
     bool hitTest (int x, int y) override;
+    void paint (juce::Graphics&) override;
+    void tick (float physScale);         // appele par le timer de l'editeur (30 Hz)
+
+    // flou de mouvement (potards-nine-hands-dsp) : longueur = angle parcouru pendant l'image, retombee x0,6
+    static constexpr float blurMax = 0.6981f, blurStep = 0.05236f, blurDecay = 0.6f;   // 40 deg, 3 deg
+
+private:
+    void rebuild (float sc);
+    void render (float a);
+    juce::Image cCentre, cRot, cReflect, cCentreOn, cRotOn, mixCentre, mixRot, frame, scratch;
+    float cacheSc = 0.0f, mixLit = -1.0f;
+    int cacheW = 0, cacheH = 0;
+    float lastAngle = 1.0e9f, blurSpan = 0.0f, blurDir = 1.0f, drawnAngle = 1.0e9f, drawnSpan = -1.0f, drawnLit = -1.0f;
 };
 
 //==============================================================================
@@ -103,7 +111,7 @@ public:
     void mouseMove (const juce::MouseEvent&) override;
     void mouseExit (const juce::MouseEvent&) override;
 
-    // Repere du fond (pedale plein cadre, image 965 x 1800 px / 2). Hauteurs de fenetre des pedales simples :
+    // Repere du fond (pedale plein cadre, image 1235 x 1800 px / 2). Hauteurs de fenetre des pedales simples :
     // taille par defaut = taille minimale 493 px (« 60 % »), 100 % = 958 px, jusqu'a 150 %.
     static constexpr float baseW = layout::frameW;
     static constexpr float baseH = layout::frameH;
@@ -116,6 +124,7 @@ public:
     static constexpr int numSizes = 3;          // 60 % (defaut d'origine) / 75 % / 100 %
     static int sizeHeight (int idx);
     void showStatus();
+    void setGlowPercent (int pc);          // clic droit > Glow (aussi pour l'outil de rendu)
 
 private:
     void timerCallback() override;
@@ -137,13 +146,13 @@ private:
 
     DoornAudioProcessor& proc;
     KnobImages knobImg;
-    DoornKnobLookAndFeel lnf;
     RightClickForwarder rightClickFwd;
 
     juce::Image background, bgScaled, boostGlow, ledOff, ledOn, ledLens, ledHalo;   // LED : lentille et halo separes
-    // clic droit > Lights : halo de la LED et du potard BOOST (0 = Low, 1 = Medium, 2 = High)
-    int ledGlowLvl = 1, boostGlowLvl = 1;
-    void drawGlow (juce::Graphics&, const juce::Image& im, const juce::Image& wide, juce::Rectangle<float>, int lvl, float opacity) const;
+    // clic droit > Glow : halo de la LED et du potard BOOST, 25 / 50 / 75 / 100 % (settings.xml, commun aux fenetres)
+    int glowPc = 100;
+    double lastGlowReadMs = 0.0;
+    float glow() const { return (float) glowPc / 100.0f; }
     static juce::Rectangle<float> glowArea (juce::Rectangle<float> r) { return r.withSizeKeepingCentre (r.getWidth() * 1.35f, r.getHeight() * 1.35f); }
     int cacheW = 0, cacheH = 0;
     float cacheScale = 0.0f, forcedScale = 0.0f;

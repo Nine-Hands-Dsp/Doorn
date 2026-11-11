@@ -1,0 +1,294 @@
+{
+  "canvas": {
+    "width": 1235,
+    "height": 1800
+  },
+  "switches": {
+    "left": {
+      "center": [
+        308.75,
+        995
+      ],
+      "x": 240,
+      "y": 902,
+      "w": 174,
+      "h": 211,
+      "states": {
+        "up": "sprites/switch_left_up.png",
+        "mid": "sprites/switch_left_mid.png",
+        "down": "sprites/switch_left_down.png"
+      }
+    },
+    "right": {
+      "center": [
+        926.25,
+        995
+      ],
+      "x": 858,
+      "y": 902,
+      "w": 173,
+      "h": 211,
+      "states": {
+        "up": "sprites/switch_right_up.png",
+        "mid": "sprites/switch_right_mid.png",
+        "down": "sprites/switch_right_down.png"
+      }
+    }
+  },
+  "knobs": {
+    "gain": {
+      "center": [
+        309,
+        265
+      ],
+      "diameter": 190,
+      "sprite_size": 200,
+      "x": 209,
+      "y": 165,
+      "pivot": [
+        100,
+        100
+      ],
+      "layers": [
+        "sprites/knob_center_fixed_190px.png",
+        "sprites/knob_rotating_crown_and_arrow_190px.png",
+        "sprites/knob_reflect_static_190px.png"
+      ],
+      "layer_roles": [
+        "fixed",
+        "rotating (rotate around pivot)",
+        "static, drawn on top"
+      ],
+      "rotation_deg": {
+        "min": -135,
+        "max": 135,
+        "at_value_0.5": 0
+      }
+    },
+    "level": {
+      "center": [
+        926,
+        265
+      ],
+      "diameter": 190,
+      "sprite_size": 200,
+      "x": 826,
+      "y": 165,
+      "pivot": [
+        100,
+        100
+      ],
+      "layers": [
+        "sprites/knob_center_fixed_190px.png",
+        "sprites/knob_rotating_crown_and_arrow_190px.png",
+        "sprites/knob_reflect_static_190px.png"
+      ],
+      "layer_roles": [
+        "fixed",
+        "rotating (rotate around pivot)",
+        "static, drawn on top"
+      ],
+      "rotation_deg": {
+        "min": -135,
+        "max": 135,
+        "at_value_0.5": 0
+      }
+    },
+    "treble": {
+      "center": [
+        309,
+        650
+      ],
+      "diameter": 190,
+      "sprite_size": 200,
+      "x": 209,
+      "y": 550,
+      "pivot": [
+        100,
+        100
+      ],
+      "layers": [
+        "sprites/knob_center_fixed_190px.png",
+        "sprites/knob_rotating_crown_and_arrow_190px.png",
+        "sprites/knob_reflect_static_190px.png"
+      ],
+      "layer_roles": [
+        "fixed",
+        "rotating (rotate around pivot)",
+        "static, drawn on top"
+      ],
+      "rotation_deg": {
+        "min": -135,
+        "max": 135,
+        "at_value_0.5": 0
+      }
+    },
+    "mids": {
+      "center": [
+        618,
+        650
+      ],
+      "diameter": 190,
+      "sprite_size": 200,
+      "x": 518,
+      "y": 550,
+      "pivot": [
+        100,
+        100
+      ],
+      "layers": [
+        "sprites/knob_center_fixed_190px.png",
+        "sprites/knob_rotating_crown_and_arrow_190px.png",
+        "sprites/knob_reflect_static_190px.png"
+      ],
+      "layer_roles": [
+        "fixed",
+        "rotating (rotate around pivot)",
+        "static, drawn on top"
+      ],
+      "rotation_deg": {
+        "min": -135,
+        "max": 135,
+        "at_value_0.5": 0
+      }
+    },
+    "bass": {
+      "center": [
+        926,
+        650
+      ],
+      "diameter": 190,
+      "sprite_size": 200,
+      "x": 826,
+      "y": 550,
+      "pivot": [
+        100,
+        100
+      ],
+      "layers": [
+        "sprites/knob_center_fixed_190px.png",
+        "sprites/knob_rotating_crown_and_arrow_190px.png",
+        "sprites/knob_reflect_static_190px.png"
+      ],
+      "layer_roles": [
+        "fixed",
+        "rotating (rotate around pivot)",
+        "static, drawn on top"
+      ],
+      "rotation_deg": {
+        "min": -135,
+        "max": 135,
+        "at_value_0.5": 0
+      }
+    },
+    "boost": {
+      "center": [
+        618,
+        265
+      ],
+      "diameter": 100,
+      "sprite_size": 108,
+      "x": 564,
+      "y": 211,
+      "pivot": [
+        54,
+        54
+      ],
+      "off": [
+        "sprites/boost_center_off_100px.png",
+        "sprites/boost_rotating_off_100px.png",
+        "sprites/boost_reflect_static_100px.png"
+      ],
+      "on": [
+        "sprites/boost_center_on_100px.png",
+        "sprites/boost_rotating_on_100px.png",
+        "sprites/boost_reflect_static_100px.png"
+      ],
+      "layer_roles": [
+        "fixed",
+        "rotating (rotate around pivot)",
+        "static, drawn on top"
+      ],
+      "rotation_deg": {
+        "min": -135,
+        "max": 135,
+        "at_value_0.5": 0
+      },
+      "glow": {
+        "sprite": "sprites/boost_glow_on.png",
+        "size": 280,
+        "x": 478,
+        "y": 125,
+        "note": "draw under the knob, only when boost is ON (boost footswitch)"
+      }
+    }
+  },
+  "leds": {
+    "bypass": {
+      "center": [
+        618,
+        1325
+      ],
+      "size": 180,
+      "x": 528,
+      "y": 1235,
+      "off": "sprites/led_off.png",
+      "on": "sprites/led_on.png",
+      "note": "on = effect engaged (bypass footswitch)"
+    }
+  },
+  "footswitches": {
+    "boost": {
+      "center": [
+        355,
+        1565
+      ],
+      "radius": 120,
+      "note": "left; toggles boost knob light"
+    },
+    "bypass": {
+      "center": [
+        880,
+        1565
+      ],
+      "radius": 120,
+      "note": "right; toggles bottom LED"
+    }
+  },
+  "screen": {
+    "x": 308.75,
+    "y": 1170.5,
+    "w": 617.5,
+    "h": 65,
+    "corner_radius": 32.5,
+    "arrow_left_center": [
+      343,
+      1203
+    ],
+    "arrow_right_center": [
+      892,
+      1203
+    ],
+    "note": "Background contains the frame + the two arrows; draw the preset name at runtime on top."
+  },
+  "z_order": [
+    "Doorn_Background.png",
+    "boost glow (if lit)",
+    "knob layers: fixed centre -> rotating crown+arrow -> static reflect",
+    "boost knob layers (same order)",
+    "switch sprite (current state)",
+    "LED sprite"
+  ],
+  "switch_state_meaning": {
+    "left": {
+      "up": "label \"off\"",
+      "mid": "centre",
+      "down": "label \"on\""
+    },
+    "right": {
+      "up": "label \"sdt-2\"",
+      "mid": "label \"laerm\"",
+      "down": "label \"sdt-1\""
+    }
+  }
+}

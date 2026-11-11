@@ -1,12 +1,13 @@
 #include "PluginEditor.h"
 #include "BinaryData.h"
 #include "WigaWindowSize.h"
+#include "NineHandsGlow.h"
 
 using namespace juce;
 
 namespace
 {
-    // Repere : image du design v017 (965 x 1800 px) / 2, positions generees dans Layout.h depuis gui/manifest.json
+    // Repere : image du design v018 (1235 x 1800 px) / 2, positions generees dans Layout.h depuis gui/manifest.json
     // Barre de presets / ligne d'etat de reference NINE HANDS | DSP (celle de Strong Pickle v1.5.3) :
     // pastille 400 x 38 unites (800 x 76 px dans l'image de 1800 px), Poppins Medium 23 (46 px), centree sur l'ecran du design
     const float barH = 38.0f, barW = 400.0f, barFont = 23.0f, arrowSize = 5.5f;
@@ -46,42 +47,118 @@ bool DoornKnob::hitTest (int x, int y)
     return c.getDistanceFrom ({ (float) x, (float) y }) <= (float) getWidth() * 0.5f * diamRatio;
 }
 
-void DoornKnobLookAndFeel::drawRotarySlider (Graphics& g, int x, int y, int w, int h,
-                                             float pos, float startAngle, float endAngle, Slider& s)
+void DoornKnob::paint (Graphics& g)
+{
+    // anti-gel v2 : l'image est prete (calculee par tick), on la pose
+    if (frame.isValid())
+    {
+        g.setImageResamplingQuality (Graphics::mediumResamplingQuality);
+        g.drawImage (frame, getLocalBounds().toFloat());
+    }
+}
+
+void DoornKnob::rebuild (float sc)
+{
+    cacheSc = sc; cacheW = getWidth(); cacheH = getHeight();
+    const int px = roundToInt ((float) jmin (getWidth(), getHeight()) * sc);
+    if (px <= 0 || img == nullptr) return;
+    // calques a la taille physique, une fois (jamais d'agrandissement : 200 px -> taille affichee, toujours plus petite)
+    auto fit = [px] (const Image& src) -> Image
+    {
+        if (! src.isValid()) return {};
+        return src.getWidth() == px ? src.createCopy() : src.rescaled (px, px, Graphics::highResamplingQuality);
+    };
+    if (isMini)
+    {
+        cCentre = fit (img->bCentreOff); cRot = fit (img->bRotOff); cReflect = fit (img->bReflect);
+        cCentreOn = fit (img->bCentreOn); cRotOn = fit (img->bRotOn);
+    }
+    else
+    {
+        cCentre = fit (img->centre); cRot = fit (img->rotating); cReflect = fit (img->reflect);
+    }
+    frame   = Image (Image::ARGB, px, px, true);
+    scratch = Image (Image::ARGB, px, px, true);
+    mixLit = -1.0f; drawnAngle = 1.0e9f;
+}
+
+void DoornKnob::tick (float sc)
 {
     if (img == nullptr) return;
-    const auto* k = dynamic_cast<DoornKnob*> (&s);
-    const bool mini = k != nullptr && k->isMini;
-    const float a = startAngle + pos * (endAngle - startAngle);
-    const Rectangle<float> r ((float) x, (float) y, (float) w, (float) h);
-    g.setImageResamplingQuality (Graphics::highResamplingQuality);
+    if (std::abs (sc - cacheSc) > 0.01f || getWidth() != cacheW || getHeight() != cacheH) rebuild (sc);
+    if (! frame.isValid()) return;
 
-    auto rotated = [&] (const Image& im, float opacity)
-    {
-        if (! im.isValid() || opacity <= 0.0f) return;
-        const float iw = (float) im.getWidth(), ih = (float) im.getHeight();
-        g.setOpacity (opacity);
-        g.drawImageTransformed (im, AffineTransform::rotation (a, iw * 0.5f, ih * 0.5f)
-                                        .scaled (r.getWidth() / iw, r.getHeight() / ih)
-                                        .translated (r.getX(), r.getY()));
-        g.setOpacity (1.0f);
-    };
+    const float a = startAngle + (float) valueToProportionOfLength (getValue()) * (endAngle - startAngle);
+    const float v = lastAngle > 1.0e8f ? 0.0f : a - lastAngle;
+    lastAngle = a;
+    if (std::abs (v) > 1.0e-5f) blurDir = v > 0.0f ? 1.0f : -1.0f;
+    blurSpan = jmax (jmin (std::abs (v), blurMax), blurSpan * blurDecay);
+    if (blurSpan < 0.002f) blurSpan = 0.0f;
 
-    if (! mini)
+    if (std::abs (a - drawnAngle) > 1.0e-4f || blurSpan != drawnSpan || std::abs (lit - drawnLit) > 0.002f)
     {
-        drawImageIn (g, img->centre, r);          // centre fixe
-        rotated (img->rotating, 1.0f);            // couronne + fleche
-        drawImageIn (g, img->reflect, r);         // reflet fixe par-dessus
-        return;
+        render (a);
+        drawnAngle = a; drawnSpan = blurSpan; drawnLit = lit;
+        repaint();
+    }
+}
+
+void DoornKnob::render (float a)
+{
+    const float px = (float) frame.getWidth();
+    const Image* centre = &cCentre;
+    const Image* rot = &cRot;
+    if (isMini && lit > 0.0f)
+    {
+        // BOOST : melange off / on prepare une fois par etape du fondu
+        if (lit >= 1.0f) { centre = &cCentreOn; rot = &cRotOn; }
+        else
+        {
+            if (std::abs (lit - mixLit) > 0.002f)
+            {
+                mixLit = lit;
+                auto mix = [this] (const Image& o, const Image& n) -> Image
+                {
+                    Image m (Image::ARGB, o.getWidth(), o.getHeight(), true);
+                    Graphics g (m);
+                    g.setOpacity (1.0f - lit); g.drawImageAt (o, 0, 0);
+                    g.setOpacity (lit);        g.drawImageAt (n, 0, 0);
+                    return m;
+                };
+                mixCentre = mix (cCentre, cCentreOn);
+                mixRot    = mix (cRot, cRotOn);
+            }
+            centre = &mixCentre; rot = &mixRot;
+        }
     }
 
-    // BOOST : verre depoli blanc, eteint -> allume en fondu (boost enclenche par le footswitch de gauche)
-    const float lit = k != nullptr ? k->lit : 0.0f;
-    drawImageIn (g, img->bCentreOff, r, 1.0f - lit);
-    drawImageIn (g, img->bCentreOn,  r, lit);
-    rotated (img->bRotOff, 1.0f - lit);
-    rotated (img->bRotOn,  lit);
-    drawImageIn (g, img->bReflect, r);
+    frame.clear (frame.getBounds());
+    Graphics g (frame);
+    g.setImageResamplingQuality (Graphics::highResamplingQuality);
+    if (centre->isValid()) g.drawImageAt (*centre, 0, 0);                // centre fixe
+    auto at = [px] (float ang) { return AffineTransform::rotation (ang, px * 0.5f, px * 0.5f); };
+    if (rot->isValid())
+    {
+        if (blurSpan <= 0.0f) g.drawImageTransformed (*rot, at (a));    // couronne + fleche, nettes a l'arret
+        else
+        {
+            // flou : positions espacees de 3 deg au plus, moyenne progressive exacte
+            const int n = jlimit (4, 16, (int) std::ceil (blurSpan / blurStep) + 1);
+            scratch.clear (scratch.getBounds());
+            {
+                Graphics gs (scratch);
+                gs.setImageResamplingQuality (Graphics::highResamplingQuality);
+                for (int k = 0; k < n; ++k)
+                {
+                    const float t = (float) k / (float) (n - 1);
+                    gs.setOpacity (1.0f / (float) (k + 1));
+                    gs.drawImageTransformed (*rot, at (a - blurDir * blurSpan * t));
+                }
+            }
+            g.drawImageAt (scratch, 0, 0);
+        }
+    }
+    if (cReflect.isValid()) g.drawImageAt (cReflect, 0, 0);              // reflet fixe par-dessus
 }
 
 //==============================================================================
@@ -222,7 +299,7 @@ DoornAudioProcessorEditor::DoornAudioProcessorEditor (DoornAudioProcessor& p)
     ledOff     = png (led_off_png, led_off_pngSize);
     ledOn      = png (led_on_png, led_on_pngSize);
     {
-        // LED : lentille (opaque jusqu'a ~30 px sur 180) et halo separes, pour regler le halo seul (clic droit > Lights)
+        // LED : lentille (opaque jusqu'a ~30 px sur 180) et halo separes : clic droit > Glow ne dose que le halo
         const int w = ledOn.getWidth(), h = ledOn.getHeight();
         ledLens = Image (Image::ARGB, w, h, true);
         ledHalo = Image (Image::ARGB, w, h, true);
@@ -248,7 +325,6 @@ DoornAudioProcessorEditor::DoornAudioProcessorEditor (DoornAudioProcessor& p)
     knobImg.bCentreOn  = png (boost_center_on_100px_png, boost_center_on_100px_pngSize);
     knobImg.bRotOn     = png (boost_rotating_on_100px_png, boost_rotating_on_100px_pngSize);
     knobImg.bReflect   = png (boost_reflect_static_100px_png, boost_reflect_static_100px_pngSize);
-    lnf.img = &knobImg;
 
     eqSwitch.frames[0]   = png (switch_left_up_png, switch_left_up_pngSize);
     eqSwitch.frames[1]   = png (switch_left_mid_png, switch_left_mid_pngSize);
@@ -280,9 +356,10 @@ DoornAudioProcessorEditor::DoornAudioProcessorEditor (DoornAudioProcessor& p)
         s.setSliderStyle (Slider::RotaryHorizontalVerticalDrag);
         s.setTextBoxStyle (Slider::NoTextBox, false, 0, 0);
         s.setRotaryParameters (rotStart, rotEnd, true);
+        s.img = &knobImg;
+        s.startAngle = rotStart; s.endAngle = rotEnd;
         s.setMouseDragSensitivity (220);
         s.setDoubleClickReturnValue (true, 5.0);
-        s.setLookAndFeel (&lnf);
         s.setMouseCursor (MouseCursor::PointingHandCursor);
         s.addMouseListener (&rightClickFwd, false);
         s.onDragStart = [this] { proc.currentPreset = -1; };
@@ -308,8 +385,7 @@ DoornAudioProcessorEditor::DoornAudioProcessorEditor (DoornAudioProcessor& p)
     lastPresetCounter = proc.presetCounter.load();
     lastMidiCount = proc.midiCounter.load();
     ledLevel = proc.raw ("active") > 0.5f ? 1.0f : 0.0f;
-    ledGlowLvl   = jlimit (0, 2, roundToInt (proc.raw ("ledGlow")));
-    boostGlowLvl = jlimit (0, 2, roundToInt (proc.raw ("boostGlow")));
+    glowPc = NineHandsGlow::percent (JucePlugin_Name);
     boostLit = proc.raw ("boostOn") > 0.5f ? 1.0f : 0.0f;
     knobs[1].lit = boostLit;
 
@@ -334,7 +410,6 @@ DoornAudioProcessorEditor::~DoornAudioProcessorEditor()
     for (auto& s : knobs)
     {
         s.removeMouseListener (&rightClickFwd);
-        s.setLookAndFeel (nullptr);
     }
 }
 
@@ -480,6 +555,9 @@ void DoornAudioProcessorEditor::timerCallback()
         repaint();
     }
 
+    // potards : image prete recalculee ici (rotation, flou de mouvement, fondu du BOOST)
+    for (auto& k : knobs) k.tick (cacheScale > 0.0f ? cacheScale : physicalScale());
+
     eqSwitch.tick (now);
     modeSwitch.tick (now);
 
@@ -521,13 +599,12 @@ void DoornAudioProcessorEditor::timerCallback()
     if (target > statusAlpha) statusAlpha = jmin (1.0f, statusAlpha + 0.28f);
     else if (target < statusAlpha) statusAlpha = jmax (0.0f, statusAlpha - 0.11f);
 
-    // clic droit > Lights : nouveau reglage -> on redessine les halos
-    const int lg = jlimit (0, 2, roundToInt (proc.raw ("ledGlow"))), bg = jlimit (0, 2, roundToInt (proc.raw ("boostGlow")));
-    if (lg != ledGlowLvl || bg != boostGlowLvl)
+    // clic droit > Glow : reglage commun a toutes les fenetres, relu toutes les 3 s (jamais dans paint)
+    if (now - lastGlowReadMs > 3000.0)
     {
-        ledGlowLvl = lg; boostGlowLvl = bg;
-        askRepaint (scaled (glowArea (layout::ledRect)));
-        askRepaint (scaled (glowArea (layout::boostGlowRect)));
+        lastGlowReadMs = now;
+        const int pc = NineHandsGlow::percent (JucePlugin_Name);
+        if (pc != glowPc) setGlowPercent (pc);
     }
 
     // LED blanche = effet actif ; fondu (0,45 a l'allumage / 0,28 a l'extinction)
@@ -549,7 +626,6 @@ void DoornAudioProcessorEditor::timerCallback()
     {
         drawnBoost = boostLit;
         knobs[1].lit = boostLit;
-        knobs[1].repaint();
         askRepaint (scaled (glowArea (layout::boostGlowRect)));
     }
 
@@ -570,26 +646,19 @@ void DoornAudioProcessorEditor::timerCallback()
 }
 
 //==============================================================================
-// Halo selon clic droit > Lights : Low = discret et un peu plus serre, Medium = design d'origine,
-// High = design d'origine + seconde couche plus large (lumiere qui porte plus loin)
-void DoornAudioProcessorEditor::drawGlow (Graphics& g, const Image& im, const Image& wide, Rectangle<float> r, int lvl, float opacity) const
+// clic droit > Glow : 25 / 50 / 75 / 100 % ; seul le halo est dose, la lentille de la LED et le verre du BOOST restent pleins
+void DoornAudioProcessorEditor::setGlowPercent (int pc)
 {
-    if (opacity <= 0.0f) return;
-    if (lvl <= 0)
-    {
-        drawImageIn (g, im, r.withSizeKeepingCentre (r.getWidth() * 0.85f, r.getHeight() * 0.85f), 0.40f * opacity);
-        return;
-    }
-    if (lvl >= 2)      // couche large d'abord (image pleine : pas d'anneau sombre autour de la lentille)
-        drawImageIn (g, wide, glowArea (r), 0.55f * opacity);
-    drawImageIn (g, im, r, opacity);
+    glowPc = NineHandsGlow::sanitize (pc);
+    askRepaint (scaled (glowArea (layout::ledRect)));
+    askRepaint (scaled (glowArea (layout::boostGlowRect)));
 }
 
 void DoornAudioProcessorEditor::drawLed (Graphics& g)
 {
     g.setImageResamplingQuality (Graphics::highResamplingQuality);
     drawImageIn (g, ledOff, layout::ledRect);
-    drawGlow (g, ledHalo, ledOn, layout::ledRect, ledGlowLvl, ledLevel);   // halo (reglable)
+    drawImageIn (g, ledHalo, layout::ledRect, ledLevel * glow());   // halo (clic droit > Glow)
     drawImageIn (g, ledLens, layout::ledRect, ledLevel);            // lentille blanc vif quand l'effet est actif
 }
 
@@ -645,7 +714,7 @@ void DoornAudioProcessorEditor::paint (Graphics& g)
     g.addTransform (AffineTransform::scale (unitScale()));
     // halo du potard BOOST (sous le potard, seulement quand le boost est enclenche)
     g.setImageResamplingQuality (Graphics::highResamplingQuality);
-    drawGlow (g, boostGlow, boostGlow, layout::boostGlowRect, boostGlowLvl, boostLit);
+    drawImageIn (g, boostGlow, layout::boostGlowRect, boostLit * glow());
     drawLed (g);
     drawScreen (g);
 }
@@ -775,6 +844,16 @@ void DoornAudioProcessorEditor::showContextMenu (int learnIdx)
         sizes.addSubMenu ("Default size (new windows)", defSizes);
         menu.addSubMenu ("Plugin size", sizes);
     }
+    {
+        // Glow (halo des lumieres) : juste apres Plugin size (menus-nine-hands-dsp)
+        PopupMenu glowMenu;
+        for (int i = 0; i < 4; ++i)
+        {
+            const int v = NineHandsGlow::values[i];
+            glowMenu.addItem (60 + i, "Glow " + String (v) + " %" + (v == 100 ? "  (default)" : ""), true, glowPc == v);
+        }
+        menu.addSubMenu ("Glow (halo of the lights)", glowMenu);
+    }
     menu.addSeparator();
 
     PopupMenu factory;
@@ -797,14 +876,6 @@ void DoornAudioProcessorEditor::showContextMenu (int learnIdx)
     const char* gateHelp[4] = { "Off", "Light (very quiet setup)", "Medium (default)", "Strong (noisy pickups / hum)" };
     for (int i = 0; i < 4; ++i) gate.addItem (50 + i, gateHelp[i], true, gNow == i);
     menu.addSubMenu ("Noise gate", gate);
-
-    PopupMenu lights;
-    const char* lv[3] = { "Low", "Medium (default)", "High" };
-    lights.addSectionHeader ("LED glow");
-    for (int i = 0; i < 3; ++i) lights.addItem (60 + i, lv[i], true, ledGlowLvl == i);
-    lights.addSectionHeader ("Boost knob glow");
-    for (int i = 0; i < 3; ++i) lights.addItem (63 + i, lv[i], true, boostGlowLvl == i);
-    menu.addSubMenu ("Lights", lights);
 
     PopupMenu settings;
     settings.addItem (40, "Smart relay: hold footswitch = momentary", true, proc.raw ("holdMomentary") > 0.5f);
@@ -843,8 +914,16 @@ void DoornAudioProcessorEditor::showContextMenu (int learnIdx)
             else if (r == 41) pr.setParamValue ("midiFsMode", 0.0f);
             else if (r == 42) pr.setParamValue ("midiFsMode", 1.0f);
             else if (r >= 50 && r <= 53) pr.setParamValue ("gate", (float) (r - 50));
-            else if (r >= 60 && r <= 62) { pr.setParamValue ("ledGlow", (float) (r - 60)); return; }
-            else if (r >= 63 && r <= 65) { pr.setParamValue ("boostGlow", (float) (r - 63)); return; }
+            else if (r >= 60 && r <= 63)
+            {
+                const int pc = NineHandsGlow::values[r - 60];
+                NineHandsGlow::setPercent (JucePlugin_Name, pc);      // toutes les fenetres du plugin
+                ed.setGlowPercent (pc);
+                ed.learnLine = "Glow  " + String (pc) + " %";        // ligne d'etat, brievement
+                ed.learnLineUntil = Time::getMillisecondCounterHiRes() + 1500.0;
+                ed.statusUntil = jmax (ed.statusUntil, ed.learnLineUntil);
+                return;
+            }
             else if (r >= 100 && r < 200) pr.applyFactoryPreset (r - 100);
             else if (r > 200 && r < 300)  pr.loadUserPreset (r - 200);
             else if (r > 300 && r < 400)  pr.saveUserPreset (r - 300);

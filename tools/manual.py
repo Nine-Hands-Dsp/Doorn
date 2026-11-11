@@ -1,4 +1,4 @@
-# DOORN (NINE HANDS | DSP) - notice PDF en francais, illustree avec le rendu reel du plugin (design v017).
+# DOORN (NINE HANDS | DSP) - notice PDF en francais, illustree avec le rendu reel du plugin (design v018).
 # Usage : python3 tools/manual.py [<dossier des captures (tools/render)>] <fichier PDF de sortie>
 #   avec captures : recompose les images et les copie dans tools/manual_assets/ ;
 #   sans captures : reprend les images composees de tools/manual_assets/.
@@ -18,7 +18,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SHOTS = sys.argv[1] if len(sys.argv) > 2 else None
 OUT = sys.argv[-1]
-VERSION = "3.2.0"
+VERSION = "4.0.0"
 TMP = os.path.dirname(os.path.abspath(OUT))
 FONTS = os.path.join(ROOT, "assets", "fonts")
 
@@ -35,12 +35,12 @@ NAMES = ["doorn_annotated.png", "doorn_modes.png", "doorn_leds.png", "doorn_bar.
 if SHOTS:
     def shot(name): return Image.open(os.path.join(SHOTS, name)).convert("RGB")
     src = shot("doorn_status.png")
-    k = src.height / 900.0                     # repere du plugin v3 : 482,5 x 900 unites (image 965 x 1800 / 2)
+    k = src.height / 900.0                     # repere du plugin v4 : 617,5 x 900 unites (image 1235 x 1800 / 2)
 
     # ---------- capture annotee (sans la bulle de la ligne d'etat) ----------
     base = shot("doorn_bypass.png")
-    marks = [(1, 40, 95), (2, 280, 102), (3, 442, 95), (4, 40, 288), (5, 190, 288), (6, 442, 288),
-             (7, 40, 470), (8, 442, 470), (9, 24, 601.5), (10, 200, 662), (11, 36, 735), (12, 448, 735), (13, 88, 40), (14, 395, 40)]
+    marks = [(1, 102, 95), (2, 348, 102), (3, 515.5, 95), (4, 102, 288), (5, 258, 288), (6, 515.5, 288),
+             (7, 102, 470), (8, 525, 470), (9, 91, 601.5), (10, 268, 662), (11, 103.5, 735), (12, 515.5, 735), (13, 150, 40), (14, 470, 40)]
     ann = base.copy(); dr = ImageDraw.Draw(ann)
     fnt = ImageFont.truetype(os.path.join(FONTS, "Poppins-Bold.ttf"), 30)
     for n, x, y in marks:
@@ -57,13 +57,13 @@ if SHOTS:
         for p in parts: s.paste(p, (x, 0)); x += p.width + gap
         s.save(path); return path
 
-    box_mode = (300, 440, 455, 562)            # inverseur de mode : SDT-2 (haut), Laerm (milieu), SDT-1 (bas)
+    box_mode = (374, 440, 529, 562)            # inverseur de mode : SDT-2 (haut), Laerm (milieu), SDT-1 (bas)
     modes_img = strip([crop_u(shot(n), box_mode) for n in ("doorn_sdt2.png", "doorn_laerm.png", "doorn_bypass.png")], os.path.join(TMP, "doorn_modes.png"))
-    box_led, box_bst = (186, 612, 296, 712), (176, 72, 306, 192)
+    box_led, box_bst = (254, 612, 364, 712), (244, 72, 374, 192)
     leds_img = strip([crop_u(base, box_led), crop_u(src, box_led), crop_u(src, box_bst), crop_u(shot("doorn_boost.png"), box_bst)],
                      os.path.join(TMP, "doorn_leds.png"))
     bar = Image.new("RGB", (int(410 * k), int(150 * k)), (255, 255, 255))
-    bar.paste(crop_u(base, (36, 576, 446, 627)), (0, 0)); bar.paste(crop_u(src, (36, 576, 446, 627)), (0, int(56 * k)))
+    bar.paste(crop_u(base, (103.75, 576, 513.75, 627)), (0, 0)); bar.paste(crop_u(src, (103.75, 576, 513.75, 627)), (0, int(56 * k)))
     bar = bar.crop((0, 0, bar.width, int(56 * k) + int(51 * k)))
     bar_img = os.path.join(TMP, "doorn_bar.png"); bar.save(bar_img)
 
@@ -194,7 +194,7 @@ T = dict(
  fs_t="5. Footswitchs, lumières et noise gate",
  fs=["<b>Footswitchs</b> : ils basculent dès l'appui et le bouton s'assombrit tant qu'on appuie. <b>Smart relay</b> (comme sur la Thorn) : si vous maintenez un footswitch plus de 0,45 s après avoir enclenché quelque chose, il fonctionne en momentané et se coupe quand vous relâchez. Clic droit &gt; <b>Settings</b> pour désactiver ce comportement.",
      "<b>LED</b> : blanche quand l'effet est actif, éteinte en bypass, avec allumage et extinction en fondu. <b>Potard BOOST</b> : en verre dépoli blanc ; boost coupé, il reste mat et gris clair ; boost enclenché, il s'allume de l'intérieur avec un halo autour.",
-     "<b>Lumières</b> (clic droit &gt; <b>Lights</b>) : <b>LED glow</b> et <b>Boost knob glow</b> règlent séparément le halo de la LED et celui du potard BOOST, en <b>Low</b> (discret), <b>Medium</b> (par défaut) ou <b>High</b> (la lumière porte plus loin), selon votre écran ou la lumière de la pièce. La lentille de la LED reste toujours aussi blanche ; le réglage est enregistré avec le projet.",
+     "<b>Glow</b> (clic droit &gt; <b>Glow (halo of the lights)</b>, juste sous Plugin size) : dose le halo de la LED et celui du potard BOOST allumé, à <b>25 %</b>, <b>50 %</b>, <b>75 %</b> ou <b>100 %</b> (par défaut), selon votre écran ou la lumière de la pièce. La lentille de la LED et le verre du BOOST restent toujours aussi lumineux : seul le halo change. Le réglage vaut pour toutes les fenêtres de Doorn et est retrouvé à la prochaine ouverture ; la ligne d'état affiche brièvement « Glow n % ».",
      "<b>Bypass</b> : son direct (le signal sec passe, aligné dans le temps sur la latence du sur-échantillonnage annoncée au DAW).",
      "<b>Noise gate</b> (clic droit &gt; Noise gate) : coupe le souffle et le ronflement dès qu'on arrête de jouer, s'ouvre instantanément à la note suivante (aucune attaque coupée), laisse les notes s'éteindre en douceur. Off, Light, <b>Medium</b> (par défaut) ou Strong (micros bruyants). N'agit que sur l'effet."],
  led_cap="LED en bypass puis effet actif ; potard BOOST, boost coupé puis enclenché.",
@@ -234,7 +234,7 @@ T = dict(
        ["EQ", "graves 90 Hz + punch 120 Hz -15 / +18 dB, médiums 750 Hz ±5 dB, aigus 4 kHz -5 / +16 dB, bypassable"],
        ["Traitement", "sur-échantillonnage x4, écrêteurs anti-repliement (ADAA), paramètres lissés, pas de dénormaux"], ["Processeur", "environ 5 % d'un cœur à 48 kHz (stéréo)"],
        ["MIDI", "tous les canaux ; MIDI Learn sur les 10 commandes (aucun CC assigné par défaut), CC 14 bits, Program Change 1-13 ; assignations sauvegardées avec le projet"],
-       ["Fenêtre", "60 % / 75 % / 100 % (Plugin size), taille par défaut des nouvelles fenêtres au choix, jusqu'à 150 %, jamais sous 60 % ; halos réglables (Lights) ; anti-gel v2 sous Windows (rendu logiciel, chien de garde, aucun appel à l'hôte depuis le thread audio)"]])
+       ["Fenêtre", "60 % / 75 % / 100 % (Plugin size), taille par défaut des nouvelles fenêtres au choix, jusqu'à 150 %, jamais sous 60 % ; halos réglables (Glow 25 / 50 / 75 / 100 %) ; anti-gel v2 sous Windows (rendu logiciel, chien de garde, aucun appel à l'hôte depuis le thread audio)"]])
 
 W = A4[0] - 36 * mm
 def story():

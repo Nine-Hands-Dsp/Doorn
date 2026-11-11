@@ -105,11 +105,7 @@ AudioProcessorValueTreeState::ParameterLayout DoornAudioProcessor::createLayout(
                                                          StringArray { "Latching (127 / 0)", "Momentary (toggle)" }, 0));
     // v2.6 noise gate integre (le grand gain de la Thorn fait monter le souffle et le ronflement quand on ne joue pas)
     p.push_back (std::make_unique<AudioParameterChoice> (ParameterID { "gate", 1 }, "Noise Gate", gateNames(), 2));
-    // v3.0 : lumieres de l'interface (clic droit > Lights), enregistrees avec le projet, non automatisables
-    p.push_back (std::make_unique<AudioParameterChoice> (ParameterID { "ledGlow", 1 }, "LED Glow", lightNames(), 1,
-                                                         AudioParameterChoiceAttributes().withAutomatable (false)));
-    p.push_back (std::make_unique<AudioParameterChoice> (ParameterID { "boostGlow", 1 }, "Boost Glow", lightNames(), 1,
-                                                         AudioParameterChoiceAttributes().withAutomatable (false)));
+    // v4.0 : le reglage Glow (clic droit) est commun a toutes les fenetres : settings.xml (NineHandsGlow.h), pas un parametre
     return { p.begin(), p.end() };
 }
 
