@@ -269,8 +269,8 @@ DoornAudioProcessorEditor::DoornAudioProcessorEditor (DoornAudioProcessor& p)
     : AudioProcessorEditor (&p), proc (p),
       eqSwitch   (*p.apvts.getParameter ("eq"), 2),
       modeSwitch (*p.apvts.getParameter ("mode"), 3),
-      boostFs  (*p.apvts.getParameter ("boostOn"), p.apvts.getRawParameterValue ("holdMomentary")),
-      bypassFs (*p.apvts.getParameter ("active"),  p.apvts.getRawParameterValue ("holdMomentary"))
+      boostFs  (*p.apvts.getParameter ("boostOn"), nullptr),   // « hold = momentary » retire (v4.1.0)
+      bypassFs (*p.apvts.getParameter ("active"),  nullptr)
 {
     using namespace BinaryData;
     background = png (Doorn_Background_png, Doorn_Background_pngSize);
@@ -371,13 +371,15 @@ DoornAudioProcessorEditor::DoornAudioProcessorEditor (DoornAudioProcessor& p)
     // Taille par defaut = taille minimale (impossible de reduire en dessous), proportions bloquees
     const int defaultW = roundToInt ((float) defaultH * baseW / baseH);
     setResizable (true, true);
-    setResizeLimits (defaultW, defaultH, roundToInt ((float) maxH * baseW / baseH), maxH);
+    const int maxW = roundToInt ((float) maxH * baseW / baseH);
+    setResizeLimits (defaultW, defaultH, maxW, maxH);
     if (auto* cons = getConstrainer())
         cons->setFixedAspectRatio ((double) baseW / (double) baseH);
+    hostLock.setLimits (defaultW, defaultH, maxW, maxH);
     setOpaque (true);                      // anti-gel : l'hote ne redessine jamais ce qui est derriere la fenetre
     setSize (defaultW, defaultH);
-    // taille des nouvelles fenetres : celle choisie dans le menu « Default size (new windows) »
-    setScaledHeight (sizeHeight (WigaWindowSize::defaultIndex (JucePlugin_Name, numSizes)));
+    // taille choisie au menu pour ce projet, sinon celle de « Default size (new windows) »
+    setScaledHeight (sizeHeight (NineHandsWindow::openIndex (JucePlugin_Name, proc.uiSizeIdx.load(), numSizes)));
     rebuildCaches();
     startTimerHz (30);
 }
@@ -403,6 +405,7 @@ void DoornAudioProcessorEditor::setScaledHeight (int h)
 {
     h = jlimit ((int) defaultH, (int) maxH, h);
     setSize (roundToInt ((float) h * baseW / baseH), h);
+    hostLock.enforce();
 }
 
 Rectangle<int> DoornAudioProcessorEditor::scaled (Rectangle<float> r) const
@@ -473,7 +476,7 @@ void DoornAudioProcessorEditor::useSoftwareRenderer()
    #endif
 }
 
-void DoornAudioProcessorEditor::parentHierarchyChanged() { useSoftwareRenderer(); }
+void DoornAudioProcessorEditor::parentHierarchyChanged() { useSoftwareRenderer(); hostLock.track (*this); }
 void DoornAudioProcessorEditor::visibilityChanged()      { useSoftwareRenderer(); if (isShowing()) repaint(); }
 
 void DoornAudioProcessorEditor::askRepaint (Rectangle<int> r)
@@ -515,6 +518,7 @@ void DoornAudioProcessorEditor::timerCallback()
 {
     const double now = Time::getMillisecondCounterHiRes();
     if (getPeer() != lastPeer || now - lastRendererCheckMs > 1000.0) { lastRendererCheckMs = now; useSoftwareRenderer(); }
+    hostLock.track (*this);
 
     // cache : reconstruit ici seulement (jamais dans paint)
     if (resizeSettle > 0 && --resizeSettle == 0) rebuildCaches (forcedScale > 0.0f ? forcedScale : 0.0f);
@@ -782,7 +786,7 @@ void DoornAudioProcessorEditor::handleMidiMenu (int r)
     else if (r == 1201) { proc.learnTarget.store (-1); proc.clearMidiMap(); }
 }
 
-void DoornAudioProcessorEditor::showContextMenu (int learnIdx)
+PopupMenu DoornAudioProcessorEditor::buildContextMenu (int learnIdx)
 {
     using namespace NineHandsMenu;
     PopupMenu menu;
@@ -796,112 +800,86 @@ void DoornAudioProcessorEditor::showContextMenu (int learnIdx)
 
     if (learnIdx >= 0)
     {
-        // menu d'une commande : en-tete (pastille + nom + assignation MIDI), puis MIDI Learn
+        // menu d'une commande (tronc commun) : en-tete, MIDI Learn, Clear MIDI, Cancel MIDI learn
         const String name = DoornAudioProcessor::learnDef (learnIdx).name;
         const int ico = learnIdx < 6 ? icoKnob : (learnIdx < 8 ? icoSwitch : icoPedal);
         addHeader (menu, menuLnf.f, ico, menuAccent, name, "MIDI: " + ccText (learnIdx));
         menu.addItem (1000 + learnIdx, "MIDI Learn: " + name, true, lt == learnIdx);
         menu.addItem (1100 + learnIdx, "Clear MIDI: " + name, proc.ccMap[learnIdx].load() >= 0);
-        if (lt >= 0) menu.addItem (1200, "Cancel MIDI learn");
-        menu.addSeparator();
+        menu.addItem (1200, "Cancel MIDI learn", lt >= 0);
     }
     else
+    {
+        // menu de la pedale (tronc commun) : presets, reglages propres, MIDI, Plugin size, Glow intensity
         addHeader (menu, menuLnf.f, icoPedal, menuAccent, "Doorn", "Distortion  v" + String (JucePlugin_VersionString));
 
-    {
-        // Plugin size : taille de cette fenetre + taille par defaut des nouvelles fenetres (comme Octopus)
+        PopupMenu factory;
+        for (int i = 0; i < DoornAudioProcessor::getNumFactoryPresets(); ++i)
+            factory.addItem (100 + i, String (i + 1) + ". " + DoornAudioProcessor::getFactoryPreset (i).name, true, proc.currentPreset.load() == i);
+        menu.addSubMenu ("Factory presets", factory);
+        PopupMenu load, save;
+        for (int slot = 1; slot <= 9; ++slot)
+        {
+            const bool exists = proc.hasUserPreset (slot);
+            load.addItem (200 + slot, "User " + String (slot) + (exists ? "" : "  (empty)"), exists, proc.currentPreset.load() == 100 + slot);
+            save.addItem (300 + slot, "User " + String (slot) + (exists ? "  (overwrite)" : ""));
+        }
+        menu.addSubMenu ("Load user preset", load);
+        menu.addSubMenu ("Save user preset", save);
+        menu.addSeparator();
+
+        PopupMenu gate;
+        const int gNow = jlimit (0, 3, roundToInt (proc.raw ("gate")));
+        const char* gateHelp[4] = { "Off", "Light (very quiet setup)", "Medium (default)", "Strong (noisy pickups / hum)" };
+        for (int i = 0; i < 4; ++i) gate.addItem (50 + i, gateHelp[i], true, gNow == i);
+        menu.addSubMenu ("Noise gate", gate);
+        menu.addSeparator();
+
+        PopupMenu midi;
+        midi.addSectionHeader ("MIDI Learn");
+        for (int i = 0; i < DoornAudioProcessor::numLearn; ++i)
+            midi.addItem (1000 + i, "Learn: " + String (DoornAudioProcessor::learnDef (i).name) + "  (" + ccText (i) + ")", true, lt == i);
+        midi.addSeparator();
+        midi.addItem (1200, "Cancel MIDI learn", lt >= 0);
+        midi.addItem (1201, "Clear all MIDI assignments");
+        midi.addSeparator();
+        NineHandsWindow::addMidiFootswitchMode (midi, proc.raw ("midiFsMode") < 0.5f);
+        midi.addSeparator();
+        NineHandsWindow::addProgramChangeInfo (midi);
+        menu.addSubMenu ("MIDI", midi);
+        menu.addSeparator();
+
         const char* names[numSizes] = { "60 %", "75 %", "100 %" };
-        const int def = WigaWindowSize::defaultIndex (JucePlugin_Name, numSizes);
-        PopupMenu sizes, defSizes;
-        for (int i = 0; i < numSizes; ++i)
-        {
-            sizes.addItem (1 + i, String (names[i]) + (i == def ? "  (default)" : ""), true, std::abs (getHeight() - sizeHeight (i)) <= 2);
-            defSizes.addItem (20 + i, names[i], true, i == def);
-        }
-        sizes.addSeparator();
-        sizes.addSubMenu ("Default size (new windows)", defSizes);
-        menu.addSubMenu ("Plugin size", sizes);
+        const int heights[numSizes] = { sizeHeight (0), sizeHeight (1), sizeHeight (2) };
+        menu.addSubMenu ("Plugin size", NineHandsWindow::sizeMenu (JucePlugin_Name, numSizes, names, heights, getHeight()));
+        menu.addSubMenu ("Glow intensity", NineHandsWindow::glowMenu (glowPc));
     }
-    {
-        // Glow (halo des lumieres) : juste apres Plugin size (menus-nine-hands-dsp)
-        PopupMenu glowMenu;
-        for (int i = 0; i < 4; ++i)
-        {
-            const int v = NineHandsGlow::values[i];
-            glowMenu.addItem (60 + i, "Glow " + String (v) + " %" + (v == 100 ? "  (default)" : ""), true, glowPc == v);
-        }
-        menu.addSubMenu ("Glow (halo of the lights)", glowMenu);
-    }
-    menu.addSeparator();
+    return menu;
+}
 
-    PopupMenu factory;
-    for (int i = 0; i < DoornAudioProcessor::getNumFactoryPresets(); ++i)
-        factory.addItem (100 + i, String (i + 1) + ". " + DoornAudioProcessor::getFactoryPreset (i).name, true, proc.currentPreset.load() == i);
-    menu.addSubMenu ("Factory presets", factory);
-    PopupMenu load, save;
-    for (int slot = 1; slot <= 9; ++slot)
-    {
-        const bool exists = proc.hasUserPreset (slot);
-        load.addItem (200 + slot, "User " + String (slot) + (exists ? "" : "  (empty)"), exists, proc.currentPreset.load() == 100 + slot);
-        save.addItem (300 + slot, "User " + String (slot) + (exists ? "  (overwrite)" : ""));
-    }
-    menu.addSubMenu ("Load user preset", load);
-    menu.addSubMenu ("Save user preset", save);
-    menu.addSeparator();
-
-    PopupMenu gate;
-    const int gNow = jlimit (0, 3, roundToInt (proc.raw ("gate")));
-    const char* gateHelp[4] = { "Off", "Light (very quiet setup)", "Medium (default)", "Strong (noisy pickups / hum)" };
-    for (int i = 0; i < 4; ++i) gate.addItem (50 + i, gateHelp[i], true, gNow == i);
-    menu.addSubMenu ("Noise gate", gate);
-
-    PopupMenu settings;
-    settings.addItem (40, "Smart relay: hold footswitch = momentary", true, proc.raw ("holdMomentary") > 0.5f);
-    settings.addSeparator();
-    settings.addItem (41, "MIDI footswitches latching (127 = on / 0 = off)", true, proc.raw ("midiFsMode") < 0.5f);
-    settings.addItem (42, "MIDI footswitches momentary (toggle each press)", true, proc.raw ("midiFsMode") > 0.5f);
-    menu.addSubMenu ("Settings", settings);
-
-    PopupMenu midi;
-    midi.addSectionHeader ("MIDI Learn");
-    for (int i = 0; i < DoornAudioProcessor::numLearn; ++i)
-        midi.addItem (1000 + i, "Learn: " + String (DoornAudioProcessor::learnDef (i).name) + "  (" + ccText (i) + ")", true, lt == i);
-    midi.addSeparator();
-    if (lt >= 0) midi.addItem (1200, "Cancel MIDI learn");
-    midi.addItem (1201, "Clear all MIDI assignments");
-    midi.addSeparator();
-    midi.addItem (910, "CC n+32 = fine (14-bit) for knobs on CC 0-31", false);
-    midi.addItem (911, "Program Change 1-" + String (DoornAudioProcessor::getNumFactoryPresets()) + "  Factory presets", false);
-    menu.addSubMenu ("MIDI", midi);
-    menu.addSeparator();
-    menu.addItem (999, "Doorn v" + String (JucePlugin_VersionString) + "  NINE HANDS | DSP", false);
-
+void DoornAudioProcessorEditor::showContextMenu (int learnIdx)
+{
+    auto menu = buildContextMenu (learnIdx);
     menu.showMenuAsync (PopupMenu::Options().withMousePosition(),       // menu clic droit : toujours la ou l'on clique
         [safe = Component::SafePointer<DoornAudioProcessorEditor> (this)] (int r)
         {
             if (safe == nullptr || r == 0) return;
             auto& ed = *safe;
             auto& pr = ed.proc;
-            if      (r >= 1 && r < 1 + numSizes) ed.setScaledHeight (ed.sizeHeight (r - 1));
-            else if (r >= 20 && r < 20 + numSizes)
+            int inst = pr.uiSizeIdx.load();
+            const int sz = NineHandsWindow::handleSize (r, JucePlugin_Name, numSizes, inst);
+            if (sz >= 0) { pr.uiSizeIdx = inst; ed.setScaledHeight (ed.sizeHeight (sz)); return; }
+            if (const int pc = NineHandsWindow::handleGlow (r, JucePlugin_Name))
             {
-                WigaWindowSize::setDefaultIndex (JucePlugin_Name, r - 20);   // toutes les nouvelles fenetres de ce plugin
-                ed.setScaledHeight (ed.sizeHeight (r - 20));                // et cette fenetre tout de suite
-            }
-            else if (r == 40) pr.setParamValue ("holdMomentary", pr.raw ("holdMomentary") > 0.5f ? 0.0f : 1.0f);
-            else if (r == 41) pr.setParamValue ("midiFsMode", 0.0f);
-            else if (r == 42) pr.setParamValue ("midiFsMode", 1.0f);
-            else if (r >= 50 && r <= 53) pr.setParamValue ("gate", (float) (r - 50));
-            else if (r >= 60 && r <= 63)
-            {
-                const int pc = NineHandsGlow::values[r - 60];
-                NineHandsGlow::setPercent (JucePlugin_Name, pc);      // toutes les fenetres du plugin
                 ed.setGlowPercent (pc);
                 ed.learnLine = "Glow  " + String (pc) + " %";        // ligne d'etat, brievement
                 ed.learnLineUntil = Time::getMillisecondCounterHiRes() + 1500.0;
                 ed.statusUntil = jmax (ed.statusUntil, ed.learnLineUntil);
                 return;
             }
+            if      (r == NineHandsWindow::idLatch)     pr.setParamValue ("midiFsMode", 0.0f);
+            else if (r == NineHandsWindow::idMomentary) pr.setParamValue ("midiFsMode", 1.0f);
+            else if (r >= 50 && r <= 53) pr.setParamValue ("gate", (float) (r - 50));
             else if (r >= 100 && r < 200) pr.applyFactoryPreset (r - 100);
             else if (r > 200 && r < 300)  pr.loadUserPreset (r - 200);
             else if (r > 300 && r < 400)  pr.saveUserPreset (r - 300);

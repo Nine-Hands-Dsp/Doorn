@@ -6,7 +6,7 @@ if(APPLE)
   set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "" FORCE)
 endif()
 
-project(Doorn VERSION 4.0.1)
+project(Doorn VERSION 4.1.0)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -59,7 +59,7 @@ juce_add_plugin(Doorn
   FORMATS VST3
   VST3_CATEGORIES Fx Distortion
   PRODUCT_NAME "Doorn"
-  VERSION 4.0.1
+  VERSION 4.1.0
   DESCRIPTION "High gain distortion (Thorn / Stampede SDT-1 style) - single pedal format"
   IS_SYNTH FALSE
   NEEDS_MIDI_INPUT TRUE
@@ -69,6 +69,17 @@ juce_add_plugin(Doorn
   COPY_PLUGIN_AFTER_BUILD FALSE)
 
 target_sources(Doorn PRIVATE PluginProcessor.cpp PluginEditor.cpp)
+
+# verrou de taille de la fenetre du DAW (jamais sous 60 %, jamais au-dela de 150 %)
+if(APPLE)
+  target_sources(Doorn PRIVATE WindowMinSize.mm)
+  target_link_libraries(Doorn PRIVATE "-framework Cocoa")
+else()
+  target_sources(Doorn PRIVATE WindowMinSize.cpp)
+endif()
+if(WIN32)
+  target_link_libraries(Doorn PRIVATE comctl32 user32)
+endif()
 
 if(MSVC)
   target_compile_options(Doorn PRIVATE /utf-8)

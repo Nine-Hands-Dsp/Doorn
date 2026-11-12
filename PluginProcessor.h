@@ -82,6 +82,7 @@ public:
 
     // ---- informations pour la fenetre ----
     std::atomic<int>   currentPreset { 0 };      // >= 0 usine, 100 + n utilisateur, -1 = modifie
+    std::atomic<int>   uiSizeIdx { -1 };         // taille de fenetre choisie au menu pour ce projet (-1 = taille par defaut)
     std::atomic<int>   presetCounter { 0 };      // incremente a chaque chargement de preset
     std::atomic<int>   lastMidiCC { -1 }, lastMidiValue { 0 }, lastMidiProgram { -1 }, midiCounter { 0 };
     std::atomic<float> outLevel { 0.0f };        // niveau de sortie (animation de la LED)

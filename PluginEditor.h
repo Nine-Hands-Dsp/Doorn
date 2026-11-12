@@ -4,6 +4,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "Layout.h"
 #include "NineHandsMenu.h"
+#include "NineHandsWindow.h"
 
 //==============================================================================
 // Doorn v4 : interface du design v018 de l'utilisateur (gui/, manifest.json, 1235 x 1800 px).
@@ -125,6 +126,7 @@ public:
     static int sizeHeight (int idx);
     void showStatus();
     void setGlowPercent (int pc);          // clic droit > Glow (aussi pour l'outil de rendu)
+    juce::PopupMenu buildContextMenu (int learnIdx = -1);   // menu clic droit (aussi pour l'outil de controle des menus)
 
 private:
     void timerCallback() override;
@@ -162,6 +164,7 @@ private:
     double lastPaintMs = 0.0, repaintAskedMs = 0.0, lastScaleCheckMs = 0.0, lastRendererCheckMs = 0.0;
     juce::Typeface::Ptr regularFace, labelFace, boldFace;
     NineHandsMenu::MenuLnf menuLnf;        // menus clic droit au design d'Octopus
+    NineHandsWindow::HostLock hostLock;    // fenetre du DAW : jamais sous 60 %, jamais au-dela de 150 %
 
     DoornKnob knobs[DoornAudioProcessor::numKnobs];
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> knobAtt[DoornAudioProcessor::numKnobs];

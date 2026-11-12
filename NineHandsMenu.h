@@ -30,9 +30,9 @@ namespace NineHandsMenu
         if (s.startsWith ("save")) return icoSave;
         if (s.startsWith ("load")) return icoLoad;
         if (s.contains ("clear") || s.startsWith ("reset") || s.startsWith ("cancel")) return icoClear;
+        if (s.contains ("glow") || s.contains ("halo")) return icoGlow;             // reglage du halo des lumieres (nov. 2026)
         if (s.contains ("latching") || s.contains ("momentary")) return icoLatch;
         if (s.startsWith ("midi") || s.startsWith ("learn") || s.startsWith ("program change") || s.startsWith ("cc ")) return icoMidi;
-        if (s.startsWith ("glow")) return icoGlow;
         if (s.contains ("size") || s.endsWith ("%") || s.contains ("% ")) return icoSize;
         if (s.contains ("preset") || s.startsWith ("user ")) return icoPreset;
         if (s.contains ("gate")) return icoGate;
@@ -69,7 +69,8 @@ namespace NineHandsMenu
             case icoPedal:    rect (3.5f, 1.5f, 9, 13, 1.8f); circ (6, 5, 1.3f); circ (10, 5, 1.3f); circ (8, 11, 1.8f); break;
             case icoKnob:     circ (8, 8, 5.5f); line (8, 8, 11, 4.2f); break;
             case icoSwitch:   circ (8, 10.5f, 3.5f); line (8, 10.5f, 8, 2.5f); break;
-            case icoGlow:     circ (8, 8, 2.0f); circ (8, 8, 4.3f); circ (8, 8, 6.5f); break;   // halo : cercles concentriques
+            case icoGlow:     circ (8, 8, 2.8f); for (int i = 0; i < 8; ++i) { const float a = (float) i * MathConstants<float>::pi / 4.0f;
+                                  line (8 + 4.6f * std::cos (a), 8 + 4.6f * std::sin (a), 8 + 6.6f * std::cos (a), 8 + 6.6f * std::sin (a)); } break;
             default: break;
         }
         g.setColour (c);
