@@ -121,17 +121,45 @@ void DoornKnob::render (float a)
         if (blurSpan <= 0.0f) g.drawImageTransformed (*rot, at (a));    // couronne + fleche, nettes a l'arret
         else
         {
-            // flou : positions espacees de 3 deg au plus, moyenne progressive exacte
+            // flou : positions espacees de 3 deg au plus, MOYENNE EXACTE des pixels (premultiplies).
+            // (v4.1.1 : l'ancienne moyenne « progressive » par superposition rendait opaque une couronne
+            //  translucide pendant la rotation : la couronne de verre du BOOST devenait blanche en tournant.)
             const int n = jlimit (4, 16, (int) std::ceil (blurSpan / blurStep) + 1);
-            scratch.clear (scratch.getBounds());
+            const int w = scratch.getWidth(), h = scratch.getHeight();
+            accum.assign ((size_t) w * (size_t) h * 4, 0u);
+            for (int k = 0; k < n; ++k)
             {
-                Graphics gs (scratch);
-                gs.setImageResamplingQuality (Graphics::highResamplingQuality);
-                for (int k = 0; k < n; ++k)
+                const float t = (float) k / (float) (n - 1);
+                scratch.clear (scratch.getBounds());
                 {
-                    const float t = (float) k / (float) (n - 1);
-                    gs.setOpacity (1.0f / (float) (k + 1));
+                    Graphics gs (scratch);
+                    gs.setImageResamplingQuality (Graphics::highResamplingQuality);
                     gs.drawImageTransformed (*rot, at (a - blurDir * blurSpan * t));
+                }
+                const Image::BitmapData bd (scratch, Image::BitmapData::readOnly);
+                for (int y = 0; y < h; ++y)
+                {
+                    uint32* acc = accum.data() + (size_t) y * (size_t) w * 4;
+                    for (int x = 0; x < w; ++x, acc += 4)
+                    {
+                        const auto* px4 = reinterpret_cast<const PixelARGB*> (bd.getPixelPointer (x, y));
+                        acc[0] += px4->getAlpha(); acc[1] += px4->getRed(); acc[2] += px4->getGreen(); acc[3] += px4->getBlue();
+                    }
+                }
+            }
+            {
+                const uint32 half = (uint32) n / 2;
+                Image::BitmapData bd (scratch, Image::BitmapData::writeOnly);
+                for (int y = 0; y < h; ++y)
+                {
+                    const uint32* acc = accum.data() + (size_t) y * (size_t) w * 4;
+                    for (int x = 0; x < w; ++x, acc += 4)
+                    {
+                        auto* px4 = reinterpret_cast<PixelARGB*> (bd.getPixelPointer (x, y));
+                        // valeurs premultipliees : la moyenne reste valide (r, g, b <= alpha)
+                        px4->setARGB ((uint8) ((acc[0] + half) / (uint32) n), (uint8) ((acc[1] + half) / (uint32) n),
+                                      (uint8) ((acc[2] + half) / (uint32) n), (uint8) ((acc[3] + half) / (uint32) n));
+                    }
                 }
             }
             g.drawImageAt (scratch, 0, 0);

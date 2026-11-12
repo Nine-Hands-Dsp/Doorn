@@ -101,6 +101,35 @@ int main (int argc, char** argv)
         proc.setParamValue ("boostOn", 0.0f);
     }
 
+    // couronne de verre du BOOST pendant la rotation (flou) : ne doit pas blanchir (v4.1.1)
+    {
+        ded->setScaledHeight (900); ded->forceRenderScale (2.0f);
+        auto* bp = proc.apvts.getParameter ("boost");
+        for (float on : { 0.0f, 1.0f })
+        {
+            proc.setParamValue ("boostOn", on);
+            bp->setValueNotifyingHost (0.5f);
+            pump (40);
+            save (ed->createComponentSnapshot (ed->getLocalBounds(), true, 2.0f).getClippedImage ({ 507, 155, 220, 220 }),
+                  out + "/boostspin_" + String ((int) on) + "_static.png");
+            for (int i = 1; i <= 4; ++i)          // rotation lente : 2 deg par image -> flou court, couronne quasi superposee
+            {
+                bp->setValueNotifyingHost (0.5f + (float) i * 2.0f / 270.0f);
+                MessageManager::getInstance()->runDispatchLoopUntil (40);
+            }
+            save (ed->createComponentSnapshot (ed->getLocalBounds(), true, 2.0f).getClippedImage ({ 507, 155, 220, 220 }),
+                  out + "/boostspin_" + String ((int) on) + "_slow.png");
+            for (int i = 1; i <= 3; ++i)          // rotation rapide
+            {
+                bp->setValueNotifyingHost (0.53f + (float) i * 0.08f);
+                MessageManager::getInstance()->runDispatchLoopUntil (40);
+            }
+            save (ed->createComponentSnapshot (ed->getLocalBounds(), true, 2.0f).getClippedImage ({ 507, 155, 220, 220 }),
+                  out + "/boostspin_" + String ((int) on) + "_fast.png");
+        }
+        proc.setParamValue ("boostOn", 0.0f);
+    }
+
     // clic droit > Glow : halos de la LED et du potard BOOST a 25 / 50 / 75 / 100 % (effet + boost actifs)
     for (int pc : { 25, 50, 75, 100 })
     {
@@ -145,13 +174,12 @@ int main (int argc, char** argv)
         };
         const String v = JucePlugin_VersionString;
         render ("doorn_menu", "Doorn", "Distortion  v" + v, NineHandsMenu::icoPedal,
-                { { "Plugin size", false, true, false, true }, { "Glow (halo of the lights)", false, true, false, true }, { "", true },
-                  { "Factory presets", false, true, false, true }, { "Load user preset", false, true, false, true }, { "Save user preset", false, true, false, true }, { "", true },
-                  { "Noise gate", false, true, false, true }, { "Settings", false, true, false, true }, { "MIDI", false, true, false, true },
-                  { "", true }, { "Doorn v" + v + "  NINE HANDS | DSP", false, false, false, false } }, 2);
+                { { "Factory presets", false, true, false, true }, { "Load user preset", false, true, false, true }, { "Save user preset", false, true, false, true }, { "", true },
+                  { "Noise gate", false, true, false, true }, { "", true }, { "MIDI", false, true, false, true }, { "", true },
+                  { "Plugin size", false, true, false, true }, { "Glow intensity", false, true, false, true } }, 0);
         render ("doorn_menu_knob", "Gain", "MIDI: not assigned", NineHandsMenu::icoKnob,
-                { { "MIDI Learn: Gain", false, false, false, true }, { "Clear MIDI: Gain", false, false, false, false }, { "", true },
-                  { "Plugin size", false, true, false, true }, { "", true }, { "Factory presets", false, true, false, true } }, 0);
+                { { "MIDI Learn: Gain", false, false, false, true }, { "Clear MIDI: Gain", false, false, false, false },
+                  { "Cancel MIDI learn", false, false, false, false } }, 0);
         render ("doorn_menu_glow", "Glow", "Halo of the lights", NineHandsMenu::icoGlow,
                 { { "Glow 25 %", false, false, false, true }, { "Glow 50 %", false, false, false, true },
                   { "Glow 75 %", false, false, false, true }, { "Glow 100 %  (default)", false, false, true, true } }, 1);

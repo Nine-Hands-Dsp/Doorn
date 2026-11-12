@@ -1,0 +1,68 @@
+{
+  "design_version": "v019 (baked rotating layer)",
+  "canvas": {
+    "width": 1235,
+    "height": 1800
+  },
+  "boost_knob": {
+    "name": "boost",
+    "centre_px": [
+      617.5,
+      265
+    ],
+    "sprite_size": 108,
+    "sprite_top_left": [
+      564,
+      211
+    ],
+    "pivot_in_sprite": [
+      54,
+      54
+    ],
+    "diameter_px": 100,
+    "rotation_deg": {
+      "value_0": -135,
+      "value_0.5": 0,
+      "value_1": 135,
+      "direction": "clockwise positive"
+    },
+    "layers_off": [
+      "sprites/boost_center_off_100px.png",
+      "sprites/boost_rotating_baked_off_100px.png",
+      "sprites/boost_reflect_static_100px.png"
+    ],
+    "layers_on": [
+      "sprites/boost_center_on_100px.png",
+      "sprites/boost_rotating_baked_on_100px.png",
+      "sprites/boost_reflect_static_100px.png"
+    ],
+    "layer_roles": [
+      "fixed",
+      "rotating around pivot",
+      "static, drawn on top (never rotated)"
+    ],
+    "glow": {
+      "sprite": "sprites/boost_glow_on.png",
+      "size": 280,
+      "top_left": [
+        478,
+        125
+      ],
+      "draw": "UNDER the knob layers, only when ON, never rotated"
+    },
+    "on_off_trigger": "boost footswitch (left footswitch, centre (355,1565), radius 120)",
+    "optional_background_patch": {
+      "file": "optional/boost_background_patch_220.png",
+      "top_left": [
+        507,
+        155
+      ],
+      "size": [
+        220,
+        220
+      ],
+      "note": "Baked cast shadow + frosted blur under the boost knob (from Doorn_Background.png). Only needed if the repo background lost them."
+    },
+    "rotating_layer_note": "The rotating layer is OPAQUE on purpose: the frosted translucency (what is seen through the crown) is baked into its pixels from the background, the glow (ON) and the fixed centre. Do not apply any extra opacity to it. The translucent originals are kept in sprites/alt_translucent/ (only for engines that preserve partial alpha when rotating)."
+  }
+}

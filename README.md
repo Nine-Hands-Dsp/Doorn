@@ -35,7 +35,7 @@ Les boutons ci-dessus téléchargent toujours la **dernière version** (Release 
 | Mode SDT-1 | Le son de la Stampede d'origine | Silicium à la masse, médiums qui chantent, harmoniques paires |
 | Mode SDT-2 | Plus compressé et saturé (Living Gate) | Étage de compression en plus, plus sombre, même volume que SDT-1 (v2.16) |
 | Mode Laerm | Plus ouvert, plus direct | Seuil d'écrêtage plus haut (type LED), bande passante plus large, même volume que SDT-1 (v2.16) |
-| Footswitch BYPASS | Relais « Smart Relay » | Clic = on / off ; **appui maintenu** (> 0,45 s) quand l'effet était coupé = fonctionnement momentané (désactivable, clic droit > Settings) |
+| Footswitch BYPASS | Relais | Clic = on / off |
 | Footswitch BOOST | Boost on / off | Même comportement que BYPASS |
 | Noise gate (ajout Doorn) | — (la Thorn est bruyante à fort gain) | Clic droit > *Noise gate* : Off / Light / Medium (défaut) / Strong. Détection sur l'entrée, en avance de 32 échantillons sur le signal traité (attaques intactes), hystérésis 6 dB, maintien 60 ms, fermeture douce 120 ms ; n'agit que sur l'effet. Souffle de −80 dBFS en entrée : −9 dBFS en sortie sans gate, silence avec |
 | LED | Une seule LED entre les footswitchs ; le potard BOOST translucide s'allume avec le boost | v3.0 : LED blanche = effet actif ; potard BOOST en verre dépoli blanc qui s'allume (avec halo) quand le boost est enclenché. Halos réglables : clic droit > *Glow* (25 / 50 / 75 / 100 %) |
@@ -71,7 +71,7 @@ Aucun CC assigné par défaut : clic droit > MIDI > Learn. Clic droit > *MIDI* >
 | Footswitch BYPASS | Footswitch |
 | Program Change 1 à 13 | Presets d'usine |
 
-Footswitchs MIDI à accrochage (127 = on / 0 = off, par défaut) ou momentanés (bascule à chaque appui) : clic droit > Settings.
+Footswitchs MIDI à accrochage (127 = on / 0 = off, par défaut) ou momentanés (bascule à chaque appui) : clic droit > MIDI.
 Pédale d'expression sans saccades : rampe vers chaque nouvelle valeur sur l'intervalle mesuré entre deux CC,
 course de la pédale apprise automatiquement (0 et 100 % exacts même si elle n'envoie que 2 à 116), zones mortes aux butées.
 Tous les paramètres sont aussi automatisables dans le DAW.
@@ -122,3 +122,4 @@ YouTube normalise le volume (les niveaux relatifs ne sont pas mesurables). Donn�
 - v3.2.0 : barre de presets / ligne d'état agrandie à la taille de référence de Strong Pickle (400 × 38 unités, police 23 : environ 1,4 fois plus haute et 1,5 fois plus grand qu'avant), même matière que l'écran du design.
 - v4.0.0 : nouveau design (v018) : pédale plus large (1235 × 1800 px), nouvelle disposition ; potards avec flou de mouvement pendant la rotation (couronne et flèche ensemble, nets à l'arrêt) ; réglage *Glow* 25 / 50 / 75 / 100 % (remplace *Lights*), commun à toutes les fenêtres. Son inchangé.
 - v4.0.1 : potard BOOST remis en configuration d'origine du mini pack v018 : sprites OFF / ON échangés net par le footswitch BOOST (plus de fondu), halo uniquement quand le boost est enclenché, seule la couronne + ligne blanche tourne ; contrôlé pixel à pixel contre les sprites (outil de rendu, boostchk_*).
+- v4.1.1 : la couronne de verre du potard BOOST ne blanchit plus pendant la rotation : le flou de mouvement fait maintenant la moyenne exacte des positions (l'ancienne moyenne par superposition rendait opaque un calque translucide) ; vaut pour tous les potards. Notice mise à jour (menus de la v4.1.0).

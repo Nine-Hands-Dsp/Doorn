@@ -37,6 +37,7 @@ private:
     void rebuild (float sc);
     void render (float a);
     juce::Image cCentre, cRot, cReflect, cCentreOn, cRotOn, frame, scratch;
+    std::vector<juce::uint32> accum;     // flou : somme exacte des positions (A, R, G, B premultiplies)
     float cacheSc = 0.0f;
     int cacheW = 0, cacheH = 0;
     float lastAngle = 1.0e9f, blurSpan = 0.0f, blurDir = 1.0f, drawnAngle = 1.0e9f, drawnSpan = -1.0f, drawnLit = -1.0f;
