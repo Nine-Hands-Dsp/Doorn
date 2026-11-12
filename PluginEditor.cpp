@@ -3,6 +3,9 @@
 #include "WigaWindowSize.h"
 #include "NineHandsGlow.h"
 
+// v4.1.2 : halo de la LED a 50 % de celui du design (demande de l'utilisateur) ; le reglage Glow s'applique par-dessus
+static constexpr float ledHaloScale = 0.5f;
+
 using namespace juce;
 
 namespace
@@ -668,7 +671,7 @@ void DoornAudioProcessorEditor::drawLed (Graphics& g)
 {
     g.setImageResamplingQuality (Graphics::highResamplingQuality);
     drawImageIn (g, ledOff, layout::ledRect);
-    drawImageIn (g, ledHalo, layout::ledRect, ledLevel * glow());   // halo (clic droit > Glow)
+    drawImageIn (g, ledHalo, layout::ledRect, ledLevel * glow() * ledHaloScale);   // halo (clic droit > Glow), 50 % du design (v4.1.2)
     drawImageIn (g, ledLens, layout::ledRect, ledLevel);            // lentille blanc vif quand l'effet est actif
 }
 
