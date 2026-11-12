@@ -3,7 +3,7 @@
 #include "WigaWindowSize.h"
 #include "NineHandsGlow.h"
 
-// v4.1.2 : halo de la LED a 50 % de celui du design (demande de l'utilisateur) ; le reglage Glow s'applique par-dessus
+// v4.1.2 / v4.1.3 : halos de la LED et du potard BOOST a 50 % de ceux du design (demande de l'utilisateur) ; le reglage Glow s'applique par-dessus
 static constexpr float ledHaloScale = 0.5f;
 
 using namespace juce;
@@ -727,7 +727,7 @@ void DoornAudioProcessorEditor::paint (Graphics& g)
     g.addTransform (AffineTransform::scale (unitScale()));
     // halo du potard BOOST (sous le potard, seulement quand le boost est enclenche)
     g.setImageResamplingQuality (Graphics::highResamplingQuality);
-    drawImageIn (g, boostGlow, layout::boostGlowRect, boostLit * glow());
+    drawImageIn (g, boostGlow, layout::boostGlowRect, boostLit * glow() * ledHaloScale);   // halo du BOOST a 50 % aussi (v4.1.3)
     drawLed (g);
     drawScreen (g);
 }
