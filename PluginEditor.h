@@ -9,7 +9,7 @@
 // Doorn v4 : interface du design v018 de l'utilisateur (gui/, manifest.json, 1235 x 1800 px).
 // Potards en 3 calques (centre fixe, couronne + fleche qui tournent, reflet fixe par-dessus), au modele
 // des potards NINE HANDS | DSP : flou de mouvement sur tout ce qui tourne, image prete calculee par le timer
-// (anti-gel v2 : paint() ne fait que la poser). Potard BOOST en verre depoli blanc : calques « off » / « on » en fondu.
+// (anti-gel v2 : paint() ne fait que la poser). Potard BOOST en verre depoli blanc (mini pack v018) : calques « off » / « on » echanges net par le footswitch BOOST.
 //==============================================================================
 struct KnobImages
 {
@@ -21,7 +21,7 @@ class DoornKnob : public juce::Slider
 {
 public:
     bool isMini = false;
-    float lit = 0.0f;                    // potard BOOST : allume (boost enclenche), en fondu
+    float lit = 0.0f;                    // potard BOOST : 1 = boost enclenche (sprites ON), 0 = OFF
     float diamRatio = 0.95f;             // diametre visible / cote du sprite
     const KnobImages* img = nullptr;
     float startAngle = 0.0f, endAngle = 1.0f;
@@ -35,8 +35,8 @@ public:
 private:
     void rebuild (float sc);
     void render (float a);
-    juce::Image cCentre, cRot, cReflect, cCentreOn, cRotOn, mixCentre, mixRot, frame, scratch;
-    float cacheSc = 0.0f, mixLit = -1.0f;
+    juce::Image cCentre, cRot, cReflect, cCentreOn, cRotOn, frame, scratch;
+    float cacheSc = 0.0f;
     int cacheW = 0, cacheH = 0;
     float lastAngle = 1.0e9f, blurSpan = 0.0f, blurDir = 1.0f, drawnAngle = 1.0e9f, drawnSpan = -1.0f, drawnLit = -1.0f;
 };

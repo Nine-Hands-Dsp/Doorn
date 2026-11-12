@@ -79,7 +79,7 @@ void DoornKnob::rebuild (float sc)
     }
     frame   = Image (Image::ARGB, px, px, true);
     scratch = Image (Image::ARGB, px, px, true);
-    mixLit = -1.0f; drawnAngle = 1.0e9f;
+    drawnAngle = 1.0e9f;
 }
 
 void DoornKnob::tick (float sc)
@@ -95,7 +95,7 @@ void DoornKnob::tick (float sc)
     blurSpan = jmax (jmin (std::abs (v), blurMax), blurSpan * blurDecay);
     if (blurSpan < 0.002f) blurSpan = 0.0f;
 
-    if (std::abs (a - drawnAngle) > 1.0e-4f || blurSpan != drawnSpan || std::abs (lit - drawnLit) > 0.002f)
+    if (std::abs (a - drawnAngle) > 1.0e-4f || blurSpan != drawnSpan || lit != drawnLit)
     {
         render (a);
         drawnAngle = a; drawnSpan = blurSpan; drawnLit = lit;
@@ -106,31 +106,10 @@ void DoornKnob::tick (float sc)
 void DoornKnob::render (float a)
 {
     const float px = (float) frame.getWidth();
-    const Image* centre = &cCentre;
-    const Image* rot = &cRot;
-    if (isMini && lit > 0.0f)
-    {
-        // BOOST : melange off / on prepare une fois par etape du fondu
-        if (lit >= 1.0f) { centre = &cCentreOn; rot = &cRotOn; }
-        else
-        {
-            if (std::abs (lit - mixLit) > 0.002f)
-            {
-                mixLit = lit;
-                auto mix = [this] (const Image& o, const Image& n) -> Image
-                {
-                    Image m (Image::ARGB, o.getWidth(), o.getHeight(), true);
-                    Graphics g (m);
-                    g.setOpacity (1.0f - lit); g.drawImageAt (o, 0, 0);
-                    g.setOpacity (lit);        g.drawImageAt (n, 0, 0);
-                    return m;
-                };
-                mixCentre = mix (cCentre, cCentreOn);
-                mixRot    = mix (cRot, cRotOn);
-            }
-            centre = &mixCentre; rot = &mixRot;
-        }
-    }
+    // BOOST : sprites ON ou OFF selon l'etat (pas de fondu) ; centre fixe, seule la couronne + ligne tourne
+    const bool on = isMini && lit >= 0.5f;
+    const Image* centre = on ? &cCentreOn : &cCentre;
+    const Image* rot    = on ? &cRotOn    : &cRot;
 
     frame.clear (frame.getBounds());
     Graphics g (frame);
@@ -618,11 +597,10 @@ void DoornAudioProcessorEditor::timerCallback()
         askRepaint (scaled (glowArea (layout::ledRect)));
     }
 
-    // potard BOOST : s'allume avec le footswitch de gauche (meme fondu que la LED), halo derriere
-    const float boostT = proc.raw ("boostOn") > 0.5f ? 1.0f : 0.0f;
-    boostLit += (boostT - boostLit) * (boostT > boostLit ? 0.45f : 0.28f);
-    if (std::abs (boostLit - boostT) < 0.003f) boostLit = boostT;
-    if (std::abs (boostLit - drawnBoost) > 0.003f)
+    // potard BOOST (mini pack v018) : etat pilote par le footswitch BOOST seul, bascule nette OFF / ON
+    // (sprites *_off_* sans halo, sprites *_on_* + halo), redessin au changement d'etat
+    boostLit = proc.raw ("boostOn") > 0.5f ? 1.0f : 0.0f;
+    if (boostLit != drawnBoost)
     {
         drawnBoost = boostLit;
         knobs[1].lit = boostLit;

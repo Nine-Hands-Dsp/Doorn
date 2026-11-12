@@ -84,6 +84,23 @@ int main (int argc, char** argv)
         for (int i = 0; i < 6; ++i) grab (5.0f);
     }
 
+    // controle du potard BOOST (mini pack v018) : rendu 1:1 avec l'image 1235 x 1800, zone (507,155) 220 x 220
+    {
+        ded->setScaledHeight (900); ded->forceRenderScale (2.0f);
+        NineHandsGlow::setPercent (JucePlugin_Name, 100); ded->setGlowPercent (100);
+        struct Shot { const char* name; float on, v; };
+        for (auto sh : { Shot { "off_050", 0.0f, 0.5f }, Shot { "on_050", 1.0f, 0.5f }, Shot { "on_067", 1.0f, 2.0f / 3.0f },
+                         Shot { "on_000", 1.0f, 0.0f }, Shot { "on_100", 1.0f, 1.0f }, Shot { "off_000", 0.0f, 0.0f } })
+        {
+            proc.setParamValue ("boostOn", sh.on);
+            if (auto* bp = proc.apvts.getParameter ("boost")) bp->setValueNotifyingHost (sh.v);
+            pump (40);
+            save (ed->createComponentSnapshot (ed->getLocalBounds(), true, 2.0f).getClippedImage ({ 507, 155, 220, 220 }),
+                  out + "/boostchk_" + sh.name + ".png");
+        }
+        proc.setParamValue ("boostOn", 0.0f);
+    }
+
     // clic droit > Glow : halos de la LED et du potard BOOST a 25 / 50 / 75 / 100 % (effet + boost actifs)
     for (int pc : { 25, 50, 75, 100 })
     {
